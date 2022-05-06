@@ -1,0 +1,412 @@
+#!/bin/bash
+
+# Argbash - see https://argbash.io for more info
+die() {
+	local _ret="${2:-1}"
+	test "${_PRINT_HELP:-no}" = yes && print_help >&2
+	echo "$1" >&2
+	exit "${_ret}"
+}
+
+u=`id -un`
+if [ x$u != "xroot" ]; then
+    echo "Error: must be run as root user"
+    exit 1
+fi
+
+print_help() {
+    printf '%s\n'
+    printf '%s\n' "Install and configure Zimbra 9.0 ..."
+    printf 'Usage: %s [-p|--password <arg>] [-t|--timezone <arg>] [-h|--help] <domain>\n' "$(basename $0)"
+    printf '\t%s\n' "<domain>: Domain to install Zimbra for"
+    printf '\t%s\n' "-p, --password: Admin password to use (no default)"
+    printf '\t%s\n' "-n, --hostname: Hostname to use for the server (default: mail)"
+    printf '\t%s\n' "-t, --timezone: Timezone to set the server to user (optional) (default: 'Singapore')"
+    printf '\t%s\n' "-h, --help: Prints help"
+    printf '%s\n'
+    printf '%s\n' "Example: $(basename $0) [-p mypassword] [-t 'ASIA/Singapore'] [-n mymail] myorg.tld"
+    printf '%s\n' "Example: $(basename $0) -p alRTFGmn1 -n zmail -t 'Europe/London' myorg.co.uk"
+    exit 1
+}
+
+parse_commandline() {
+    _positionals_count=0
+    while test $# -gt 0; do
+        _key="$1"
+        case "$_key" in
+            -p|--password)
+                test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
+                _arg_password="$2"
+                shift
+                ;;
+            --password=*)
+                _arg_password="${_key##--password=}"
+                ;;
+            -p*)
+                _arg_password="${_key##-p}"
+                ;;
+            -n|--hostname)
+                test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
+                _arg_hostname="$2"
+                shift
+                ;;
+            --hostname=*)
+                _arg_hostname="${_key##--hostname=}"
+                ;;
+            -n)
+                _arg_hostname="${_key##-t}"
+                ;;
+            -t|--timezone)
+                test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
+                _arg_timezone="$2"
+                shift
+                ;;
+            --timezone=*)
+                _arg_timezone="${_key##--timezone=}"
+                ;;
+            -t*)
+                _arg_timezone="${_key##-t}"
+                ;;
+            -h|--help)
+                print_help
+                exit 0
+                ;;
+            -h*)
+                print_help
+                exit 0
+                ;;
+            *)
+                _last_positional="$1"
+                _positionals+=("$_last_positional")
+                _positionals_count=$((_positionals_count + 1))
+                ;;
+        esac
+        shift
+    done
+}
+
+handle_passed_args_count() {
+	local _required_args_string="'domain'"
+	test "${_positionals_count}" -ge 1 || _PRINT_HELP=yes die "FATAL ERROR: Not enough positional arguments - we require exactly 1 (namely: $_required_args_string), but got only ${_positionals_count}." 1
+	test "${_positionals_count}" -le 1 || _PRINT_HELP=yes die "FATAL ERROR: There were spurious positional arguments --- we expect exactly 1 (namely: $_required_args_string), but got ${_positionals_count} (the last one was: '${_last_positional}')." 1
+}
+
+assign_positional_args() {
+	local _positional_name _shift_for=$1
+	_positional_names="_arg_domain "
+
+	shift "$_shift_for"
+	for _positional_name in ${_positional_names}
+	do
+		test $# -gt 0 || break
+		eval "$_positional_name=\${1}" || die "Error during argument parsing, possibly an Argbash bug." 1
+		shift
+	done
+}
+
+parse_commandline "$@"
+handle_passed_args_count
+assign_positional_args 1 "${_positionals[@]}"
+
+MYIP=$(hostname -I | cut -f1 -d" " | tr -d '[:space:]')
+DOMAIN="$_arg_domain"
+HOSTNAME="${_arg_hostname:="mail"}"."$DOMAIN"
+TIMEZONE="${_arg_timezone:-"Asia/Singapore"}"
+MYPASSWORD="${_arg_password:-$(openssl rand -base64 9)}"
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
+echo "Updating system and installing some essential packages ..."
+#What are the other essential packages?
+DEBIAN_FRONTEND=noninteractive apt-get update -qq -y < /dev/null > /dev/null
+DEBIAN_FRONTEND=noninteractive apt-get upgrade -qq -y < /dev/null > /dev/null
+DEBIAN_FRONTEND=noninteractive apt-get install -qq -y dnsmasq lsb-release net-tools netfilter-persistent dnsutils iptables < /dev/null > /dev/null
+
+echo "Disabling some of the non-essential services for Zimbra ..."
+services_to_disable=$("postfix" "iptables" "httpd" "exim" "named" "apache2" "sendmail" "mysqld" "mariadb" "systemd-resolved" "ufw")
+for service in "${services_to_disable[@]}"; do
+	if systemctl is-active --quiet "${service}"; then
+		systemctl disable "${service}"
+		systemctl stop "${service}"
+		systemctl mask "${service}"
+		echo -e "\n${service} process detected, disabling...\n"
+	fi
+done
+
+# Check DNS
+echo "Checking DNS ..."
+name=`host license.zimbra.com`
+if [[ "$name" == *"not found"* ]]; then
+    echo -e "${RED}DNS resolution failed! Check your resolve.conf file.${NC}"
+    exit 1
+else
+    echo -e "${GREEN}... Done.${NC}"
+fi
+
+# Update firewall
+echo "Enabling firewall for Zimbra ports ..."
+echo "Ports 22/25/143/443/995/993 will be opened to the internet. Please check your iptables for more info."
+
+#flushing iptables while having INPUT=DROP policy will terminate ssh connection
+/usr/sbin/iptables -P INPUT ACCEPT
+
+/usr/sbin/iptables --flush
+#block null packets
+/usr/sbin/iptables -A INPUT -p tcp --tcp-flags ALL NONE -j DROP
+#block syn flood
+/usr/sbin/iptables -A INPUT -p tcp ! --syn -m state --state NEW -j DROP
+#block XMAS packets
+/usr/sbin/iptables -A INPUT -p tcp --tcp-flags ALL ALL -j DROP
+
+#accept all traffic on your loopback interface
+/usr/sbin/iptables -A INPUT -i lo -j ACCEPT
+/usr/sbin/iptables -A OUTPUT -o lo -j ACCEPT
+
+#Allow Established and Related Incoming Connections
+/usr/sbin/iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+
+#Allow ports
+/usr/sbin/iptables -A INPUT -p tcp -m tcp --dport 143 -j ACCEPT
+/usr/sbin/iptables -A INPUT -p tcp -m tcp --dport 993  -j ACCEPT
+/usr/sbin/iptables -A INPUT -p tcp -m tcp --dport 995  -j ACCEPT
+/usr/sbin/iptables -A INPUT -p tcp -m tcp --dport 443  -j ACCEPT
+/usr/sbin/iptables -A INPUT -p tcp -m tcp --dport 25  -j ACCEPT
+/usr/sbin/iptables -A INPUT -p tcp -m tcp --dport 22 -j ACCEPT
+
+#enable ping
+/usr/sbin/iptables -A INPUT -p icmp --icmp-type 8 -s 0/0 -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
+/usr/sbin/iptables -A OUTPUT -p icmp --icmp-type 0 -d 0/0 -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+#Set policy defaults
+/usr/sbin/iptables -P OUTPUT ACCEPT
+/usr/sbin/iptables -P FORWARD ACCEPT
+/usr/sbin/iptables -P INPUT DROP
+
+#IPv6 closed for now
+/usr/sbin/ip6tables -P OUTPUT ACCEPT
+/usr/sbin/ip6tables -P FORWARD ACCEPT
+/usr/sbin/ip6tables -P INPUT DROP
+
+netfilter-persistent save
+
+
+#Check Firewall
+response=$(curl --write-out '%{http_code}' --silent --output /dev/null https://license.zimbra.com)
+if [[ "$response" == "200" ]]; then
+    echo "Zimbra License server reachable ..."
+    echo -e "${GREEN}... Done.${NC}"
+else
+    echo -e "${RED} Issue with firewall ... Please check!${NC}"
+    exit 1
+fi
+
+# Reset the hosts file
+echo "Rewriting the /etc/hosts file ..."
+mv /etc/hosts /etc/hosts.old
+printf '127.0.0.1\tlocalhost.localdomain\tlocalhost\n127.0.1.1\tubuntu\n'$MYIP'\t'$HOSTNAME'\tzimbra\t' | tee -a /etc/hosts >/dev/null 2>&1
+echo -e "${GREEN}... Done.${NC}"
+echo "Setting hostname ($HOSTNAME) and timezone ($TIMEZONE) ..."
+hostnamectl set-hostname $HOSTNAME >/dev/null 2>&1
+timedatectl set-timezone $TIMEZONE >/dev/null 2>&1
+echo -e "${GREEN}... Done.${NC}"
+apt-get -qq update
+
+# Get Ubuntu Version
+version=$(lsb_release -d | awk -F" " '{print $3}' | cut -c 1-5)
+
+#Install a DNS Server
+echo "Configuring dnsmasq ..."
+mv /etc/dnsmasq.conf /etc/dnsmasq.conf.old
+#create the conf file
+printf 'server=8.8.8.8\nlisten-address=127.0.0.1\ndomain='$DOMAIN'\nmx-host='$DOMAIN','$HOSTNAME',0\naddress=/'$HOSTNAME'/'$MYIP'\n' | tee -a /etc/dnsmasq.conf >/dev/null
+mv /etc/resolv.conf {,.old}
+echo "nameserver 127.0.0.1" > /etc/resolv.conf
+# restart dns services
+systemctl enable dnsmasq.service > /dev/null 2>&1 && systemctl restart dnsmasq.service
+echo -e "${GREEN}... Done.${NC}"
+
+#other updates
+DEBIAN_FRONTEND=noninteractive apt install -y locales
+locale-gen "en_US.UTF-8"
+update-locale LC_ALL="en_US.UTF-8"
+
+#Preparing the config files to inject
+if [ ! -d "/tmp/zcs" ]; then
+    mkdir /tmp/zcs
+fi
+
+#Download binaries
+echo "Downloading Zimbra 9.0 for Ubuntu $version ..."
+if [[ "$version" == "20.04" ]]; then
+    wget -P /tmp/ https://files.zimbra.com/downloads/9.0.0_GA/zcs-NETWORK-9.0.0_GA_4178.UBUNTU20_64.20211112031526.tgz > /dev/null 2>&1
+elif [[ "$version" == "18.04" ]]; then
+    wget -P /tmp/ https://files.zimbra.com/downloads/9.0.0_GA/zcs-NETWORK-9.0.0_GA_3924.UBUNTU18_64.20200331010312.tgz > /dev/null 2>&1
+fi
+echo -e "${GREEN}... Done.${NC}"
+
+echo "Extracting the files ..."
+cd /tmp/zcs && tar xzf /tmp/zcs-NETWORK-9.0.0*.tgz
+
+echo "Creating the auto-install input files ..."
+> /tmp/zcs/zconfig
+cat <<EOF >/tmp/zcs/zconfig
+AVDOMAIN="$DOMAIN"
+AVUSER="admin@$DOMAIN"
+CREATEADMIN="admin@$DOMAIN"
+CREATEADMINPASS="$MYPASSWORD"
+CREATEDOMAIN="$DOMAIN"
+DOCREATEADMIN="yes"
+DOCREATEDOMAIN="yes"
+DOTRAINSA="yes"
+ENABLEDEFAULTBACKUP="yes"
+EXPANDMENU="no"
+HOSTNAME="$HOSTNAME"
+HTTPPORT="8080"
+HTTPPROXY="TRUE"
+HTTPPROXYPORT="80"
+HTTPSPORT="8443"
+HTTPSPROXYPORT="443"
+IMAPPORT="7143"
+IMAPPROXYPORT="143"
+IMAPSSLPORT="7993"
+IMAPSSLPROXYPORT="993"
+INSTALL_WEBAPPS="service zimlet zimbra zimbraAdmin"
+JAVAHOME="/opt/zimbra/common/lib/jvm/java"
+LDAPBESSEARCHSET="set"
+LDAPAMAVISPASS="$MYPASSWORD"
+LDAPPOSTPASS="$MYPASSWORD"
+LDAPROOTPASS="$MYPASSWORD"
+LDAPADMINPASS="$MYPASSWORD"
+LDAPREPPASS="$MYPASSWORD"
+LDAPBESSEARCHSET="set"
+LDAPDEFAULTSLOADED="1"
+LDAPHOST="$HOSTNAME"
+LDAPPORT="389"
+LDAPREPLICATIONTYPE="master"
+LDAPSERVERID="2"
+LICENSEFILE="/tmp/zcs/ZCSLicense.xml"
+MAILBOXDMEMORY="1920"
+MAILPROXY="TRUE"
+MODE="https"
+MYSQLMEMORYPERCENT="30"
+POPPORT="7110"
+POPPROXYPORT="110"
+POPSSLPORT="7995"
+POPSSLPROXYPORT="995"
+PROXYMODE="https"
+REMOVE="no"
+RUNARCHIVING="no"
+RUNAV="yes"
+RUNCBPOLICYD="no"
+RUNDKIM="yes"
+RUNSA="yes"
+RUNVMHA="no"
+SERVICEWEBAPP="yes"
+SMTPDEST="admin@$DOMAIN"
+SMTPHOST="$HOSTNAME"
+SMTPNOTIFY="yes"
+SMTPSOURCE="admin@$DOMAIN"
+SNMPNOTIFY="yes"
+SNMPTRAPHOST="$HOSTNAME"
+SPELLURL="http://$HOSTNAME:7780/aspell.php"
+STARTSERVERS="yes"
+SYSTEMMEMORY="7.5"
+TRAINSAHAM="ham.account@$DOMAIN"
+TRAINSASPAM="spam.account@$DOMAIN"
+UIWEBAPPS="yes"
+UPGRADE="yes"
+USEKBSHORTCUTS="TRUE"
+USESPELL="yes"
+VERSIONUPDATECHECKS="TRUE"
+VIRUSQUARANTINE="virus-quarantine.account@$DOMAIN"
+ZIMBRA_REQ_SECURITY="yes"
+ldap_bes_searcher_password="$MYPASSWORD"
+ldap_dit_base_dn_config="cn=zimbra"
+ldap_nginx_password="$MYPASSWORD"
+mailboxd_directory="/opt/zimbra/mailboxd"
+mailboxd_keystore="/opt/zimbra/mailboxd/etc/keystore"
+mailboxd_keystore_password="$MYPASSWORD"
+mailboxd_server="jetty"
+mailboxd_truststore="/opt/zimbra/common/lib/jvm/java/lib/security/cacerts"
+mailboxd_truststore_password="changeit"
+postfix_mail_owner="postfix"
+postfix_setgid_group="postdrop"
+ssl_default_digest="sha256"
+zimbraDNSMasterIP="8.8.4.4"
+zimbraDNSTCPUpstream="no"
+zimbraDNSUseTCP="yes"
+zimbraDNSUseUDP="yes"
+zimbraDefaultDomainName="$DOMAIN"
+zimbraFeatureBriefcasesEnabled="Enabled"
+zimbraFeatureTasksEnabled="Enabled"
+zimbraIPMode="ipv4"
+zimbraMailProxy="FALSE"
+zimbraMtaMyNetworks="127.0.0.0/8 $MYIP/32 [::1]/128 [fe80::]/64"
+zimbraPrefTimeZoneId="$TIMEZONE"
+zimbraReverseProxyLookupTarget="TRUE"
+zimbraVersionCheckInterval="1d"
+zimbraVersionCheckNotificationEmail="admin@$DOMAIN"
+zimbraVersionCheckNotificationEmailFrom="admin@$DOMAIN"
+zimbraVersionCheckSendNotifications="TRUE"
+zimbraWebProxy="TRUE"
+zimbra_ldap_userdn="uid=zimbra,cn=admins,cn=zimbra"
+zimbra_require_interprocess_security="1"
+zimbra_server_hostname="$HOSTNAME"
+INSTALL_PACKAGES="zimbra-core zimbra-ldap zimbra-logger zimbra-mta zimbra-snmp zimbra-store zimbra-apache zimbra-spell zimbra-convertd zimbra-memcached zimbra-proxy"
+EOF
+
+> /tmp/zcs/zkeys
+cat <<EOF >/tmp/zcs/zkeys
+y
+y
+y
+y
+y
+y
+n
+y
+y
+y
+y
+y
+y
+y
+n
+n
+n
+y
+n
+y
+EOF
+
+D=`date +%s`
+echo "Download the trial license ..."
+wget -q --no-check-certificate --no-proxy -O /tmp/zcs/ZCSLicense.xml "https://license.zimbra.com/zimbraLicensePortal/public/STLicense?IssuedToName=MyCompany&IssuedToEmail=noone@$DOMAIN" 
+if [ ! -s "/tmp/zcs/ZCSLicense.xml" ]; then
+	echo -e "${RED}License file could not be downloaded. Please check and re-run $(basename $0).${NC}"
+	exit 1
+fi
+echo -e "${GREEN}... Done.${NC}"
+echo "Installing the Zimbra binaires ..."
+echo -e "For more details you can open a new terminal and run tail -f ${GREEN}/tmp/install.log.*${NC}."
+cd /tmp/zcs/zcs-* && ./install.sh -l /tmp/zcs/ZCSLicense.xml -s < /tmp/zcs/zkeys >> /tmp/zcs/install-$D.log 2>&1
+echo -e "${GREEN}... Done.${NC}"
+
+echo "Setting up your Zimbra configuration, this can take up to 20 minutes or slightly more."
+echo -e "For more details you can open a new terminal and run tail -f ${GREEN}/tmp/zmsetup.log${NC}."
+/opt/zimbra/libexec/zmsetup.pl -c /tmp/zcs/zconfig >> /tmp/zcs/install-$D.log 2>&1
+echo "Allow mailbox service to start ..."
+for i in {15..0}; do echo -ne "${RED}$i${NC}\033[0K\r"; sleep 1; done; echo
+echo "Activating license ..."
+su - zimbra -c "zmlicense -a"
+echo -e "${GREEN}... Done.${NC}"
+echo
+echo
+echo "Zimbra installation details:"
+echo
+echo "  - Webmail Login:  https://${HOSTNAME}"
+echo "  - Admin Console:  https://${HOSTNAME}:7071"
+echo "  - Admin Username: admin"
+echo "  - Admin Password: ${MYPASSWORD}"
+echo ""
