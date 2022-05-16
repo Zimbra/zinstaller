@@ -184,9 +184,9 @@ iptables -P FORWARD ACCEPT
 iptables -P INPUT DROP
 
 #IPv6 closed for now
-/usr/sbin/ip6tables -P OUTPUT ACCEPT
-/usr/sbin/ip6tables -P FORWARD ACCEPT
-/usr/sbin/ip6tables -P INPUT DROP
+ip6tables -P OUTPUT ACCEPT
+ip6tables -P FORWARD ACCEPT
+ip6tables -P INPUT DROP
 
 netfilter-persistent save
 
