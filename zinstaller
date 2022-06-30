@@ -287,7 +287,7 @@ if [ $(dig +short type257 $(hostname --d) | grep "letsencrypt.org" | grep -v "is
       cat >> /usr/local/sbin/letsencrypt-zimbra << EOF
 #!/bin/bash
 
-/usr/bin/certbot certonly -d $(hostname --fqdn) --standalone --manual-public-ip-logging-ok -n --preferred-chain  "ISRG Root X1"
+/usr/local/sbin/certbot certonly -d $(hostname --fqdn) --standalone --manual-public-ip-logging-ok -n --preferred-chain  "ISRG Root X1" --agree-tos --register-unsafely-without-email
 
 cp "/etc/letsencrypt/live/$(hostname --fqdn)/privkey.pem" /opt/zimbra/ssl/zimbra/commercial/commercial.key
 chown zimbra:zimbra /opt/zimbra/ssl/zimbra/commercial/commercial.key
