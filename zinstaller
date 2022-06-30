@@ -205,7 +205,7 @@ fi
 
 # Update firewall
 echo "Enabling firewall for Zimbra ports ..."
-echo "Ports 22/25/143/443/995/993 will be opened to the internet. Please check your iptables for more info."
+echo "Ports 22/25/143/80/443/995/993 will be opened to the internet. Please check your iptables for more info."
 
 #flushing iptables while having INPUT=DROP policy will terminate ssh connection
 iptables -P INPUT ACCEPT
@@ -230,6 +230,7 @@ iptables -A INPUT -p tcp -m tcp --dport 143 -j ACCEPT
 iptables -A INPUT -p tcp -m tcp --dport 993  -j ACCEPT
 iptables -A INPUT -p tcp -m tcp --dport 995  -j ACCEPT
 iptables -A INPUT -p tcp -m tcp --dport 443  -j ACCEPT
+iptables -A INPUT -p tcp -m tcp --dport 80  -j ACCEPT
 iptables -A INPUT -p tcp -m tcp --dport 25  -j ACCEPT
 iptables -A INPUT -p tcp -m tcp --dport 22 -j ACCEPT
 
