@@ -29,6 +29,10 @@ Should your connection drop, you can use the ssh command like normal and resume 
 screen -r
 ```
 
+## Certificate renewal
+
+The `zinstaller` set's up a daily cron job to renew and deploy the Let's Encrypt certificate on Zimbra, you must however restart Zimbra manually at a suitable time for the new certificate to be used. To do this issue `sudo su zimbra -c "/opt/zimbra/bin/zmcontrol restart"` on the command line.
+
 ## Screenshots
 
 ![](screenshots/license.png)
