@@ -14,6 +14,21 @@ chmod +x /root/zinstaller
 /root/zinstaller -p put-a-password-here -n mail -t 'Europe/London' example.com
 ```
 
+Having a poor connection over SSH? Try using `screen`:
+
+```
+apt -y install screen
+screen
+wget https://raw.githubusercontent.com/Zimbra/zinstaller/master/zinstaller -O /root/zinstaller
+chmod +x /root/zinstaller
+/root/zinstaller -p put-a-password-here -n mail -t 'Europe/London' example.com
+```
+Should your connection drop, you can use the ssh command like normal and resume your session using:
+
+```
+screen -r
+```
+
 ## Screenshots
 
 ![](screenshots/license.png)
