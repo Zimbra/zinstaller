@@ -1,4 +1,4 @@
-# Automated installation of Zimbra
+# Automated installation of Zimbra and Lets Encrypt
 
 This article introduces the `zinstaller` script that can be used for automating the installation of Zimbra. The `zinstaller` script will install a Zimbra 9 single server on Ubuntu 18 or Ubuntu 20 and will also obtain and install a 30-day trial license.
 
@@ -11,7 +11,7 @@ If your mail server is reachable under mail.example.com and you want your email 
 ```
 wget https://raw.githubusercontent.com/Zimbra/zinstaller/master/zinstaller -O /root/zinstaller
 chmod +x /root/zinstaller
-/root/zinstaller -p put-a-password-here -n mail -t 'Europe/London' example.com
+/root/zinstaller -p put-a-password-here -n mail -t 'Europe/London' --letsencrypt y example.com
 ```
 
 Having a poor connection over SSH? Try using `screen`:
@@ -21,7 +21,7 @@ apt -y install screen
 screen
 wget https://raw.githubusercontent.com/Zimbra/zinstaller/master/zinstaller -O /root/zinstaller
 chmod +x /root/zinstaller
-/root/zinstaller -p put-a-password-here -n mail -t 'Europe/London' example.com
+/root/zinstaller -p put-a-password-here -n mail -t 'Europe/London' --letsencrypt y example.com
 ```
 Should your connection drop, you can use the ssh command like normal and resume your session using:
 
