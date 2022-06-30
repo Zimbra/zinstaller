@@ -283,7 +283,7 @@ if [ $(dig +short type257 $(hostname --d) | grep "letsencrypt.org" | grep -v "is
       /opt/certbot/bin/pip install --upgrade pip
       /opt/certbot/bin/pip install certbot
       ln -s /opt/certbot/bin/certbot /usr/local/sbin/certbot
-      /usr/local/sbin/certbot certonly -d $(hostname --fqdn) --standalone --preferred-chain  "ISRG Root X1"
+      /usr/local/sbin/certbot certonly -d $(hostname --fqdn) --standalone --preferred-chain  "ISRG Root X1" --agree-tos --register-unsafely-without-email
       cat >> /usr/local/sbin/letsencrypt-zimbra << EOF
 #!/bin/bash
 
