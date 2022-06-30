@@ -127,8 +127,8 @@ echo "Disabling some of the non-essential services for Zimbra ..."
 services_to_disable=$("postfix" "iptables" "httpd" "exim" "named" "apache2" "sendmail" "mysqld" "mariadb" "systemd-resolved" "ufw")
 for service in "${services_to_disable[@]}"; do
 	if systemctl is-active --quiet "${service}"; then
-		systemctl disable "${service}"
 		systemctl stop "${service}"
+        systemctl disable "${service}"
 		systemctl mask "${service}"
 		echo -e "\n${service} process detected, disabling...\n"
 	fi
