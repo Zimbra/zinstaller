@@ -168,7 +168,17 @@ echo "Disabling some of the non-essential services for Zimbra ..."
 		systemctl disable ufw
 		systemctl mask ufw
 
-systemctl restart dnsmasq
+#Install a DNS Server
+echo "Configuring dnsmasq ..."
+mv /etc/dnsmasq.conf /etc/dnsmasq.conf.old
+#create the conf file
+printf 'server=8.8.8.8\nserver=8.8.4.4\nserver=9.9.9.9\nserver=149.112.112.112\nserver=1.1.1.1\nserver=1.0.0.1\nlisten-address=127.0.0.1\ndomain='$DOMAIN'\nmx-host='$DOMAIN','$HOSTNAME',0\naddress=/'$HOSTNAME'/'$MYIP'\n' | tee -a /etc/dnsmasq.conf >/dev/null
+mv /etc/resolv.conf {,.old}
+echo "nameserver 127.0.0.1" > /etc/resolv.conf
+# restart dns services
+systemctl enable dnsmasq.service > /dev/null 2>&1 && systemctl restart dnsmasq.service
+echo -e "${GREEN}... Done.${NC}"
+
 
 # Check DNS
 echo "Checking DNS ..."
@@ -250,17 +260,6 @@ apt-get -qq update
 
 # Get Ubuntu Version
 version=$(lsb_release -d | awk -F" " '{print $3}' | cut -c 1-5)
-
-#Install a DNS Server
-echo "Configuring dnsmasq ..."
-mv /etc/dnsmasq.conf /etc/dnsmasq.conf.old
-#create the conf file
-printf 'server=8.8.8.8\nlisten-address=127.0.0.1\ndomain='$DOMAIN'\nmx-host='$DOMAIN','$HOSTNAME',0\naddress=/'$HOSTNAME'/'$MYIP'\n' | tee -a /etc/dnsmasq.conf >/dev/null
-mv /etc/resolv.conf {,.old}
-echo "nameserver 127.0.0.1" > /etc/resolv.conf
-# restart dns services
-systemctl enable dnsmasq.service > /dev/null 2>&1 && systemctl restart dnsmasq.service
-echo -e "${GREEN}... Done.${NC}"
 
 #other updates
 DEBIAN_FRONTEND=noninteractive apt install -y locales
