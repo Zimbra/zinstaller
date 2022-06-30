@@ -455,17 +455,17 @@ echo "@			CAA     0 issue \"letsencrypt.org\""
 read use_le
 if [ "$use_le" != "${use_le#[Yy]}" ] ;then # this grammar (the #[] operator) means that the variable $answer where any Y or y in 1st position will be dropped if they exist.
    echo "Installing certbot"
-   apt install certbot
-   certbot certonly -d $(hostname --fqdn) --standalone
+   apt install python3 python3-venv libaugeas0
+   python3 -m venv /opt/certbot/
+   /opt/certbot/bin/pip install --upgrade pip
+   /opt/certbot/bin/pip install certbot
+   ln -s /opt/certbot/bin/certbot /usr/local/sbin/certbot
+   /usr/local/sbin/certbot certonly -d $(hostname --fqdn) --standalone --preferred-chain  "ISRG Root X1"
 
    cat >> /usr/local/sbin/letsencrypt-zimbra << EOF
 #!/bin/bash
 
-/usr/bin/certbot certonly -d $(hostname --fqdn) --standalone --manual-public-ip-logging-ok -n
-
-# avoid initial `Unable to validate certificate chain` warning
-cat /opt/zimbra/bin/zmcertmgr | sed '/$self->verifycrt( $type, $keyf, $crtf, $ca_pem )/,+1 d' > /usr/local/sbin/patchedzmcertmgr
-chmod +rx /usr/local/sbin/patchedzmcertmgr
+/usr/bin/certbot certonly -d $(hostname --fqdn) --standalone --manual-public-ip-logging-ok -n --preferred-chain  "ISRG Root X1"
 
 cp "/etc/letsencrypt/live/$(hostname --fqdn)/privkey.pem" /opt/zimbra/ssl/zimbra/commercial/commercial.key
 chown zimbra:zimbra /opt/zimbra/ssl/zimbra/commercial/commercial.key
@@ -475,7 +475,7 @@ cp "/etc/letsencrypt/live/$(hostname --fqdn)/chain.pem" "/etc/letsencrypt/live/$
 cat /tmp/ISRG-X1.pem >> "/etc/letsencrypt/live/$(hostname --fqdn)/chainZimbra.pem"
 chown zimbra:zimbra /etc/letsencrypt -R
 cd /tmp
-su zimbra -c '/usr/local/sbin/patchedzmcertmgr deploycrt comm "/etc/letsencrypt/live/$(hostname --fqdn)/cert.pem" "/etc/letsencrypt/live/$(hostname --fqdn)/chainZimbra.pem"'
+su zimbra -c '/opt/zimbra/bin/zmcertmgr deploycrt comm "/etc/letsencrypt/live/$(hostname --fqdn)/cert.pem" "/etc/letsencrypt/live/$(hostname --fqdn)/chainZimbra.pem"'
 rm -f "/etc/letsencrypt/live/$(hostname --fqdn)/chainZimbra.pem"
 EOF
    chmod +rx /usr/local/sbin/letsencrypt-zimbra
