@@ -136,39 +136,6 @@ DEBIAN_FRONTEND=noninteractive apt-get update -qq -y < /dev/null > /dev/null
 DEBIAN_FRONTEND=noninteractive apt-get upgrade -qq -y < /dev/null > /dev/null
 DEBIAN_FRONTEND=noninteractive apt-get install -qq -y dnsmasq lsb-release net-tools netfilter-persistent dnsutils iptables < /dev/null > /dev/null
 
-if [ $(dig +short type257 $(hostname --d) | grep "letsencrypt.org" | grep -v "issuewild" | grep "issue" | wc -l) -eq 1 ]; then 
-   if [ "$LETSENCRYPT" != "${LETSENCRYPT#[Yy]}" ] ;then # this grammar (the #[] operator) means that the variable $answer where any Y or y in 1st position will be dropped if they exist.
-      echo "Installing certbot"
-      apt install -y python3 python3-venv libaugeas0
-      python3 -m venv /opt/certbot/
-      /opt/certbot/bin/pip install --upgrade pip
-      /opt/certbot/bin/pip install certbot
-      ln -s /opt/certbot/bin/certbot /usr/local/sbin/certbot
-      /usr/local/sbin/certbot certonly -d $(hostname --fqdn) --standalone --preferred-chain  "ISRG Root X1"
-      cat >> /usr/local/sbin/letsencrypt-zimbra << EOF
-#!/bin/bash
-
-/usr/bin/certbot certonly -d $(hostname --fqdn) --standalone --manual-public-ip-logging-ok -n --preferred-chain  "ISRG Root X1"
-
-cp "/etc/letsencrypt/live/$(hostname --fqdn)/privkey.pem" /opt/zimbra/ssl/zimbra/commercial/commercial.key
-chown zimbra:zimbra /opt/zimbra/ssl/zimbra/commercial/commercial.key
-wget -O /tmp/ISRG-X1.pem https://letsencrypt.org/certs/isrgrootx1.pem.txt
-rm -f "/etc/letsencrypt/live/$(hostname --fqdn)/chainZimbra.pem"
-cp "/etc/letsencrypt/live/$(hostname --fqdn)/chain.pem" "/etc/letsencrypt/live/$(hostname --fqdn)/chainZimbra.pem"
-cat /tmp/ISRG-X1.pem >> "/etc/letsencrypt/live/$(hostname --fqdn)/chainZimbra.pem"
-chown zimbra:zimbra /etc/letsencrypt -R
-cd /tmp
-su zimbra -c '/opt/zimbra/bin/zmcertmgr deploycrt comm "/etc/letsencrypt/live/$(hostname --fqdn)/cert.pem" "/etc/letsencrypt/live/$(hostname --fqdn)/chainZimbra.pem"'
-rm -f "/etc/letsencrypt/live/$(hostname --fqdn)/chainZimbra.pem"
-EOF
-      chmod +rx /usr/local/sbin/letsencrypt-zimbra
-   fi
-else 
-   echo "CAA record for your domain cannot be found, you should add it first, example for bind:"
-   echo "@			CAA     0 issue \"letsencrypt.org\""
-   exit 1
-fi
-
 echo "Disabling some of the non-essential services for Zimbra ..."
 		systemctl stop postfix
 		systemctl disable postfix
@@ -306,6 +273,39 @@ apt-get -qq update
 
 # Get Ubuntu Version
 version=$(lsb_release -d | awk -F" " '{print $3}' | cut -c 1-5)
+
+if [ $(dig +short type257 $(hostname --d) | grep "letsencrypt.org" | grep -v "issuewild" | grep "issue" | wc -l) -eq 1 ]; then 
+   if [ "$LETSENCRYPT" != "${LETSENCRYPT#[Yy]}" ] ;then # this grammar (the #[] operator) means that the variable $answer where any Y or y in 1st position will be dropped if they exist.
+      echo "Installing certbot"
+      apt install -y python3 python3-venv libaugeas0
+      python3 -m venv /opt/certbot/
+      /opt/certbot/bin/pip install --upgrade pip
+      /opt/certbot/bin/pip install certbot
+      ln -s /opt/certbot/bin/certbot /usr/local/sbin/certbot
+      /usr/local/sbin/certbot certonly -d $(hostname --fqdn) --standalone --preferred-chain  "ISRG Root X1"
+      cat >> /usr/local/sbin/letsencrypt-zimbra << EOF
+#!/bin/bash
+
+/usr/bin/certbot certonly -d $(hostname --fqdn) --standalone --manual-public-ip-logging-ok -n --preferred-chain  "ISRG Root X1"
+
+cp "/etc/letsencrypt/live/$(hostname --fqdn)/privkey.pem" /opt/zimbra/ssl/zimbra/commercial/commercial.key
+chown zimbra:zimbra /opt/zimbra/ssl/zimbra/commercial/commercial.key
+wget -O /tmp/ISRG-X1.pem https://letsencrypt.org/certs/isrgrootx1.pem.txt
+rm -f "/etc/letsencrypt/live/$(hostname --fqdn)/chainZimbra.pem"
+cp "/etc/letsencrypt/live/$(hostname --fqdn)/chain.pem" "/etc/letsencrypt/live/$(hostname --fqdn)/chainZimbra.pem"
+cat /tmp/ISRG-X1.pem >> "/etc/letsencrypt/live/$(hostname --fqdn)/chainZimbra.pem"
+chown zimbra:zimbra /etc/letsencrypt -R
+cd /tmp
+su zimbra -c '/opt/zimbra/bin/zmcertmgr deploycrt comm "/etc/letsencrypt/live/$(hostname --fqdn)/cert.pem" "/etc/letsencrypt/live/$(hostname --fqdn)/chainZimbra.pem"'
+rm -f "/etc/letsencrypt/live/$(hostname --fqdn)/chainZimbra.pem"
+EOF
+      chmod +rx /usr/local/sbin/letsencrypt-zimbra
+   fi
+else 
+   echo "CAA record for your domain cannot be found, you should add it first, example for bind:"
+   echo "@			CAA     0 issue \"letsencrypt.org\""
+   exit 1
+fi
 
 #other updates
 DEBIAN_FRONTEND=noninteractive apt install -y locales
