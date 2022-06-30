@@ -137,49 +137,49 @@ DEBIAN_FRONTEND=noninteractive apt-get upgrade -qq -y < /dev/null > /dev/null
 DEBIAN_FRONTEND=noninteractive apt-get install -qq -y dnsmasq lsb-release net-tools netfilter-persistent dnsutils iptables < /dev/null > /dev/null
 
 echo "Disabling some of the non-essential services for Zimbra ..."
-		systemctl stop postfix
-		systemctl disable postfix
-		systemctl mask postfix
-		
-		systemctl stop iptables
-		systemctl disable iptables
-		systemctl mask iptables
-		
-		systemctl stop httpd
-		systemctl disable httpd
-		systemctl mask httpd
-		
-		systemctl stop exim
-		systemctl disable exim
-		systemctl mask exim
-		
-		systemctl stop named
-		systemctl disable named
-		systemctl mask named
-		
-		systemctl stop apache2
-		systemctl disable apache2
-		systemctl mask apache2
-		
-		systemctl stop sendmail
-		systemctl disable sendmail
-		systemctl mask sendmail
-		
-		systemctl stop mysqld
-		systemctl disable mysqld
-		systemctl mask mysqld
-		
-		systemctl stop mariadb
-		systemctl disable mariadb
-		systemctl mask mariadb
-		
-		systemctl stop systemd-resolved
-		systemctl disable systemd-resolved
-		systemctl mask systemd-resolved
-		
-		systemctl stop ufw
-		systemctl disable ufw
-		systemctl mask ufw
+systemctl stop postfix
+systemctl disable postfix
+systemctl mask postfix
+
+systemctl stop iptables
+systemctl disable iptables
+systemctl mask iptables
+
+systemctl stop httpd
+systemctl disable httpd
+systemctl mask httpd
+
+systemctl stop exim
+systemctl disable exim
+systemctl mask exim
+
+systemctl stop named
+systemctl disable named
+systemctl mask named
+
+systemctl stop apache2
+systemctl disable apache2
+systemctl mask apache2
+
+systemctl stop sendmail
+systemctl disable sendmail
+systemctl mask sendmail
+
+systemctl stop mysqld
+systemctl disable mysqld
+systemctl mask mysqld
+
+systemctl stop mariadb
+systemctl disable mariadb
+systemctl mask mariadb
+
+systemctl stop systemd-resolved
+systemctl disable systemd-resolved
+systemctl mask systemd-resolved
+
+systemctl stop ufw
+systemctl disable ufw
+systemctl mask ufw
 
 #Install a DNS Server
 echo "Configuring dnsmasq ..."
@@ -191,7 +191,6 @@ echo "nameserver 127.0.0.1" > /etc/resolv.conf
 # restart dns services
 systemctl enable dnsmasq.service > /dev/null 2>&1 && systemctl restart dnsmasq.service
 echo -e "${GREEN}... Done.${NC}"
-
 
 # Check DNS
 echo "Checking DNS ..."
@@ -205,7 +204,8 @@ fi
 
 # Update firewall
 echo "Enabling firewall for Zimbra ports ..."
-echo "Ports 22/25/143/80/443/995/993 will be opened to the internet. Please check your iptables for more info."
+echo "${GREEN}Ports 22/25/143/80/443/995/993/7071 will be opened to the internet.${NC}"
+echo "Please check your iptables for more info."
 
 #flushing iptables while having INPUT=DROP policy will terminate ssh connection
 iptables -P INPUT ACCEPT
@@ -230,6 +230,7 @@ iptables -A INPUT -p tcp -m tcp --dport 143 -j ACCEPT
 iptables -A INPUT -p tcp -m tcp --dport 993  -j ACCEPT
 iptables -A INPUT -p tcp -m tcp --dport 995  -j ACCEPT
 iptables -A INPUT -p tcp -m tcp --dport 443  -j ACCEPT
+iptables -A INPUT -p tcp -m tcp --dport 7071  -j ACCEPT
 iptables -A INPUT -p tcp -m tcp --dport 80  -j ACCEPT
 iptables -A INPUT -p tcp -m tcp --dport 25  -j ACCEPT
 iptables -A INPUT -p tcp -m tcp --dport 22 -j ACCEPT
@@ -249,7 +250,6 @@ iptables -P INPUT DROP
 /usr/sbin/ip6tables -P INPUT DROP
 
 netfilter-persistent save
-
 
 #Check Firewall
 response=$(curl --write-out '%{http_code}' --silent --output /dev/null https://license.zimbra.com)
