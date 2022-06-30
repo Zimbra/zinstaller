@@ -25,8 +25,8 @@ print_help() {
     printf '\t%s\n' "-l, --letsencypt: Use Let's Encrypt for providing TLS certificates (optional y/n) (default: 'n')"
     printf '\t%s\n' "-h, --help: Prints help"
     printf '%s\n'
-    printf '%s\n' "Example: $(basename $0) [-p mypassword] [-t 'ASIA/Singapore'] [-n mymail] myorg.tld"
-    printf '%s\n' "Example: $(basename $0) -p alRTFGmn1 -n zmail -t 'Europe/London' myorg.co.uk"
+    printf '%s\n' "Usage: $(basename $0) [-p mypassword] [-t 'TimeZone'] [-n Server-Name] [-l y] Domain-Name"
+    printf '%s\n' "Example: $(basename $0) -p alRTFGmn1 -n zmail -t 'Europe/London' -l y myorg.co.uk"
     exit 1
 }
 
@@ -489,8 +489,6 @@ if [ "$LETSENCRYPT" != "${LETSENCRYPT#[Yy]}" ] ;then # this grammar (the #[] ope
    /etc/cron.daily/letsencrypt-zimbra
    su zimbra -c '/opt/zimbra/bin/zmcontrol restart'
 fi
-
-
 
 echo
 echo
