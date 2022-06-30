@@ -386,6 +386,25 @@ zimbra_server_hostname="$HOSTNAME"
 INSTALL_PACKAGES="zimbra-core zimbra-ldap zimbra-logger zimbra-mta zimbra-snmp zimbra-store zimbra-apache zimbra-spell zimbra-convertd zimbra-memcached zimbra-proxy zimbra-onlyoffice"
 EOF
 
+#9.1 - Answer File
+#1 - License Agreement
+#2 - Zimbra’s package repository
+#3 - LDAP
+#4 - Logger
+#5 - MTA
+#6 - DNS Cache
+#7 - SNMP
+#8 - Store
+#9 - Apache
+#10 - Spell
+#11 - Convertd
+#12 - Memcached
+#13 - Proxy
+#14 - Archiving
+#15 - Onlyoffice
+#16 - IMAPD Beta
+#17 - Continue
+
 > /tmp/zcs/zkeys
 cat <<EOF >/tmp/zcs/zkeys
 y
