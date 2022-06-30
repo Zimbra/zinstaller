@@ -17,11 +17,12 @@ fi
 print_help() {
     printf '%s\n'
     printf '%s\n' "Install and configure Zimbra 9.0 ..."
-    printf 'Usage: %s [-p|--password <arg>] [-t|--timezone <arg>] [-h|--help] <domain>\n' "$(basename $0)"
+    printf 'Usage: %s [-p|--password <arg>] [-t|--timezone <arg>] [-l|--letsencypt <arg>] [-h|--help] <domain>\n' "$(basename $0)"
     printf '\t%s\n' "<domain>: Domain to install Zimbra for"
     printf '\t%s\n' "-p, --password: Admin password to use (no default)"
     printf '\t%s\n' "-n, --hostname: Hostname to use for the server (default: mail)"
     printf '\t%s\n' "-t, --timezone: Timezone to set the server to user (optional) (default: 'Singapore')"
+    printf '\t%s\n' "-l, --letsencypt: Use Let's Encrypt for providing TLS certificates (optional y/n) (default: 'n')"
     printf '\t%s\n' "-h, --help: Prints help"
     printf '%s\n'
     printf '%s\n' "Example: $(basename $0) [-p mypassword] [-t 'ASIA/Singapore'] [-n mymail] myorg.tld"
@@ -67,6 +68,17 @@ parse_commandline() {
             -t*)
                 _arg_timezone="${_key##-t}"
                 ;;
+            -l|--letsencrypt)
+                test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
+                _arg_letsencrypt="$2"
+                shift
+                ;;
+            --letsencrypt=*)
+                _arg_letsencrypt="${_key##--letsencrypt=}"
+                ;;
+            -l*)
+                _arg_letsencrypt="${_key##-l}"
+                ;;
             -h|--help)
                 print_help
                 exit 0
@@ -108,20 +120,32 @@ parse_commandline "$@"
 handle_passed_args_count
 assign_positional_args 1 "${_positionals[@]}"
 
-echo "Do you want to use Let's Encrypt for providing TLS certificates? (Y/n):"
-echo "If you select Y this script will set-up certbot and Zimbra. If you select n you have to configure Zimbra TLS yourself."
-echo "CONSIDER THIS A BETA FEATURE!! This assumes you have set up you CAA record example for bind:"
-echo "@			CAA     0 issue \"letsencrypt.org\""
-read use_le
-if [ "$use_le" != "${use_le#[Yy]}" ] ;then # this grammar (the #[] operator) means that the variable $answer where any Y or y in 1st position will be dropped if they exist.
-   echo "Installing certbot"
-   apt install python3 python3-venv libaugeas0
-   python3 -m venv /opt/certbot/
-   /opt/certbot/bin/pip install --upgrade pip
-   /opt/certbot/bin/pip install certbot
-   ln -s /opt/certbot/bin/certbot /usr/local/sbin/certbot
-   /usr/local/sbin/certbot certonly -d $(hostname --fqdn) --standalone --preferred-chain  "ISRG Root X1"
-   cat >> /usr/local/sbin/letsencrypt-zimbra << EOF
+MYIP=$(hostname -I | cut -f1 -d" " | tr -d '[:space:]')
+DOMAIN="$_arg_domain"
+HOSTNAME="${_arg_hostname:="mail"}"."$DOMAIN"
+TIMEZONE="${_arg_timezone:-"Asia/Singapore"}"
+LETSENCRYPT="${_arg_letsencrypt:-"n"}"
+MYPASSWORD="${_arg_password:-$(openssl rand -base64 9)}"
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
+echo "Updating system and installing some essential packages ..."
+#What are the other essential packages?
+DEBIAN_FRONTEND=noninteractive apt-get update -qq -y < /dev/null > /dev/null
+DEBIAN_FRONTEND=noninteractive apt-get upgrade -qq -y < /dev/null > /dev/null
+DEBIAN_FRONTEND=noninteractive apt-get install -qq -y dnsmasq lsb-release net-tools netfilter-persistent dnsutils iptables < /dev/null > /dev/null
+
+if [ $(dig +short type257 $(hostname --d) | grep "letsencrypt.org" | grep -v "issuewild" | grep "issue" | wc -l) -eq 1 ]; then 
+   if [ "$LETSENCRYPT" != "${LETSENCRYPT#[Yy]}" ] ;then # this grammar (the #[] operator) means that the variable $answer where any Y or y in 1st position will be dropped if they exist.
+      echo "Installing certbot"
+      apt install python3 python3-venv libaugeas0
+      python3 -m venv /opt/certbot/
+      /opt/certbot/bin/pip install --upgrade pip
+      /opt/certbot/bin/pip install certbot
+      ln -s /opt/certbot/bin/certbot /usr/local/sbin/certbot
+      /usr/local/sbin/certbot certonly -d $(hostname --fqdn) --standalone --preferred-chain  "ISRG Root X1"
+      cat >> /usr/local/sbin/letsencrypt-zimbra << EOF
 #!/bin/bash
 
 /usr/bin/certbot certonly -d $(hostname --fqdn) --standalone --manual-public-ip-logging-ok -n --preferred-chain  "ISRG Root X1"
@@ -137,23 +161,13 @@ cd /tmp
 su zimbra -c '/opt/zimbra/bin/zmcertmgr deploycrt comm "/etc/letsencrypt/live/$(hostname --fqdn)/cert.pem" "/etc/letsencrypt/live/$(hostname --fqdn)/chainZimbra.pem"'
 rm -f "/etc/letsencrypt/live/$(hostname --fqdn)/chainZimbra.pem"
 EOF
-   chmod +rx /usr/local/sbin/letsencrypt-zimbra
+      chmod +rx /usr/local/sbin/letsencrypt-zimbra
+   fi
+else 
+   echo "CAA record for your domain cannot be found, you should add it first, example for bind:"
+   echo "@			CAA     0 issue \"letsencrypt.org\""
+   exit 1
 fi
-
-MYIP=$(hostname -I | cut -f1 -d" " | tr -d '[:space:]')
-DOMAIN="$_arg_domain"
-HOSTNAME="${_arg_hostname:="mail"}"."$DOMAIN"
-TIMEZONE="${_arg_timezone:-"Asia/Singapore"}"
-MYPASSWORD="${_arg_password:-$(openssl rand -base64 9)}"
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-NC='\033[0m' # No Color
-
-echo "Updating system and installing some essential packages ..."
-#What are the other essential packages?
-DEBIAN_FRONTEND=noninteractive apt-get update -qq -y < /dev/null > /dev/null
-DEBIAN_FRONTEND=noninteractive apt-get upgrade -qq -y < /dev/null > /dev/null
-DEBIAN_FRONTEND=noninteractive apt-get install -qq -y dnsmasq lsb-release net-tools netfilter-persistent dnsutils iptables < /dev/null > /dev/null
 
 echo "Disabling some of the non-essential services for Zimbra ..."
 		systemctl stop postfix
@@ -469,7 +483,7 @@ echo "Activating license ..."
 su - zimbra -c "zmlicense -a"
 echo -e "${GREEN}... Done.${NC}"
 
-if [ "$use_le" != "${use_le#[Yy]}" ] ;then # this grammar (the #[] operator) means that the variable $answer where any Y or y in 1st position will be dropped if they exist.
+if [ "$LETSENCRYPT" != "${LETSENCRYPT#[Yy]}" ] ;then # this grammar (the #[] operator) means that the variable $answer where any Y or y in 1st position will be dropped if they exist.
    ln -s /usr/local/sbin/letsencrypt-zimbra /etc/cron.daily/letsencrypt-zimbra
    /etc/cron.daily/letsencrypt-zimbra
    su zimbra -c '/opt/zimbra/bin/zmcontrol restart'
