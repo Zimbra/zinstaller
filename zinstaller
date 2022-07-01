@@ -134,7 +134,7 @@ echo "Updating system and installing some essential packages ..."
 #What are the other essential packages?
 DEBIAN_FRONTEND=noninteractive apt-get update -qq -y < /dev/null > /dev/null
 DEBIAN_FRONTEND=noninteractive apt-get upgrade -qq -y < /dev/null > /dev/null
-DEBIAN_FRONTEND=noninteractive apt-get install -qq -y dnsmasq lsb-release net-tools netfilter-persistent dnsutils iptables < /dev/null > /dev/null
+DEBIAN_FRONTEND=noninteractive apt-get install -qq -y dnsmasq lsb-release net-tools netfilter-persistent dnsutils iptables sed wget< /dev/null > /dev/null
 
 echo "Disabling some of the non-essential services for Zimbra ..."
 systemctl stop postfix
@@ -485,10 +485,63 @@ su - zimbra -c "zmlicense -a"
 echo -e "${GREEN}... Done.${NC}"
 
 if [ "$LETSENCRYPT" != "${LETSENCRYPT#[Yy]}" ] ;then # this grammar (the #[] operator) means that the variable $answer where any Y or y in 1st position will be dropped if they exist.
+   echo "Deploying Let's Encrypt on Zimbra"
    ln -s /usr/local/sbin/letsencrypt-zimbra /etc/cron.daily/letsencrypt-zimbra
    /etc/cron.daily/letsencrypt-zimbra
-   su zimbra -c '/opt/zimbra/bin/zmcontrol restart'
 fi
+
+echo "Setting optimal security settings"
+rm -Rf /tmp/provfile
+ZIMBRAIP=$(netstat -tulpn | grep slapd | awk '{print $4}' | awk -F ':' '{print $1}')
+
+cat >> /tmp/provfile << EOF
+mcf zimbraReverseProxySSLProtocols TLSv1.2
+mcf +zimbraReverseProxySSLProtocols TLSv1.3
+mcf zimbraReverseProxySSLCiphers 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384'
+
+mcf +zimbraResponseHeader "Strict-Transport-Security: max-age=31536000; includeSubDomains"
+mcf +zimbraResponseHeader "X-XSS-Protection: 1; mode=block"
+mcf +zimbraResponseHeader "X-Content-Type-Options: nosniff"
+mcf +zimbraResponseHeader "X-Robots-Tag: noindex"
+mcf zimbraMailKeepOutWebCrawlers TRUE
+
+mcf zimbraSSLDHParam /etc/ffdhe4096.pem
+
+mcf zimbraMtaSmtpdTlsCiphers medium
+mcf zimbraMtaSmtpdTlsMandatoryCiphers  medium
+mcf zimbraMtaSmtpdTlsProtocols '>=TLSv1.2'
+mcf zimbraMtaTlsSecurityLevel may
+
+ms $HOSTNAME zimbraPop3CleartextLoginEnabled FALSE
+ms $HOSTNAME zimbraImapCleartextLoginEnabled FALSE
+
+mcf zimbraLastLogonTimestampFrequency 1s
+mc default zimbraPrefShortEmailAddress FALSE
+
+mcf +zimbraMailTrustedIP 127.0.0.1
+mcf +zimbraMailTrustedIP $ZIMBRAIP
+EOF
+
+sed -i 's/-server -Dhttps.protocols=TLSv1.2 -Djdk.tls.client.protocols=TLSv1.2/-server -Dhttps.protocols=TLSv1.2,TLSv1.3 -Djdk.tls.client.protocols=TLSv1.2,TLSv1.3/g' /opt/zimbra/conf/localconfig.xml
+wget https://raw.githubusercontent.com/internetstandards/dhe_groups/master/ffdhe4096.pem -O /etc/ffdhe4096.pem
+
+su zimbra -c '/opt/zimbra/bin/postconf -e fast_flush_domains=""'
+su zimbra -c '/opt/zimbra/bin/postconf -e smtpd_etrn_restrictions=reject'
+su zimbra -c '/opt/zimbra/bin/postconf -e disable_vrfy_command=yes'
+su zimbra -c '/opt/zimbra/bin/postconf -e tls_medium_cipherlist="ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384"'
+su zimbra -c '/opt/zimbra/bin/postconf -e tls_preempt_cipherlist=no'
+
+su zimbra -c '/opt/zimbra/bin/zmlocalconfig -e ldap_common_tlsprotocolmin="3.3"'
+su zimbra -c '/opt/zimbra/bin/zmlocalconfig -e ldap_common_tlsciphersuite="HIGH"'
+su zimbra -c '/opt/zimbra/bin/zmlocalconfig -e ldap_starttls_supported=1'
+su zimbra -c '/opt/zimbra/bin/zmlocalconfig -e zimbra_require_interprocess_security=1'
+su zimbra -c '/opt/zimbra/bin/zmlocalconfig -e ldap_starttls_required=true'
+
+su zimbra -c '/opt/zimbra/bin/zmlocalconfig -e alias_login_enabled=false'
+su zimbra -c '/opt/zimbra/bin/zmlocalconfig -e zimbra_same_site_cookie="Strict"'
+
+su zimbra -c '/opt/zimbra/bin/zmprov < /tmp/provfile'
+su zimbra -c '/opt/zimbra/bin/zmcontrol restart'
 
 echo
 echo
