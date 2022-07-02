@@ -470,7 +470,7 @@ if [ ! -s "/tmp/zcs/ZCSLicense.xml" ]; then
 	exit 1
 fi
 echo -e "${GREEN}... Done.${NC}"
-echo "Installing the Zimbra binaires ..."
+echo "Installing the Zimbra binaries ..."
 echo -e "For more details you can open a new terminal and run tail -f ${GREEN}/tmp/install.log.*${NC}."
 cd /tmp/zcs/zcs-* && ./install.sh -l /tmp/zcs/ZCSLicense.xml -s < /tmp/zcs/zkeys >> /tmp/zcs/install-$D.log 2>&1
 echo -e "${GREEN}... Done.${NC}"
