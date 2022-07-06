@@ -297,7 +297,7 @@ cp "/etc/letsencrypt/live/$(hostname --fqdn)/chain.pem" "/etc/letsencrypt/live/$
 cat /tmp/ISRG-X1.pem >> "/etc/letsencrypt/live/$(hostname --fqdn)/chainZimbra.pem"
 chown zimbra:zimbra /etc/letsencrypt -R
 cd /tmp
-su zimbra -c '/opt/zimbra/bin/zmcertmgr deploycrt comm "/etc/letsencrypt/live/$(hostname --fqdn)/cert.pem" "/etc/letsencrypt/live/$(hostname --fqdn)/chainZimbra.pem"'
+su - zimbra -c '/opt/zimbra/bin/zmcertmgr deploycrt comm "/etc/letsencrypt/live/$(hostname --fqdn)/cert.pem" "/etc/letsencrypt/live/$(hostname --fqdn)/chainZimbra.pem"'
 rm -f "/etc/letsencrypt/live/$(hostname --fqdn)/chainZimbra.pem"
 EOF
       chmod +rx /usr/local/sbin/letsencrypt-zimbra
@@ -316,6 +316,8 @@ update-locale LC_ALL="en_US.UTF-8"
 #Preparing the config files to inject
 if [ ! -d "/tmp/zcs" ]; then
     mkdir /tmp/zcs
+else
+    rm -rf tmp/zcs/*    #Dangerous Command
 fi
 
 #Download binaries
@@ -485,9 +487,14 @@ su - zimbra -c "zmlicense -a"
 echo -e "${GREEN}... Done.${NC}"
 
 if [ "$LETSENCRYPT" != "${LETSENCRYPT#[Yy]}" ] ;then # this grammar (the #[] operator) means that the variable $answer where any Y or y in 1st position will be dropped if they exist.
-   echo "Deploying Let's Encrypt on Zimbra"
-   ln -s /usr/local/sbin/letsencrypt-zimbra /etc/cron.daily/letsencrypt-zimbra
-   /etc/cron.daily/letsencrypt-zimbra
+    echo "Deploying Let's Encrypt on Zimbra"
+    ln -s /usr/local/sbin/letsencrypt-zimbra /etc/cron.daily/letsencrypt-zimbra
+    ip=$(dig +short @8.8.4.4 $(hostname))   # Ensure local IP resolution does not happen
+    if [ -n "$ip" ]; then
+        /etc/cron.daily/letsencrypt-zimbra
+    else
+        echo -e "${RED}Could not resolve hostname ...${NC}." 
+        echo -e "${RED}Correct your nameserver entries and run the command ${GREEN}/etc/cron.daily/letsencrypt-zimbra${NC}."
 fi
 
 echo "Setting optimal security settings"
@@ -525,23 +532,23 @@ EOF
 sed -i 's/-server -Dhttps.protocols=TLSv1.2 -Djdk.tls.client.protocols=TLSv1.2/-server -Dhttps.protocols=TLSv1.2,TLSv1.3 -Djdk.tls.client.protocols=TLSv1.2,TLSv1.3/g' /opt/zimbra/conf/localconfig.xml
 wget https://raw.githubusercontent.com/internetstandards/dhe_groups/master/ffdhe4096.pem -O /etc/ffdhe4096.pem
 
-su zimbra -c '/opt/zimbra/bin/postconf -e fast_flush_domains=""'
-su zimbra -c '/opt/zimbra/bin/postconf -e smtpd_etrn_restrictions=reject'
-su zimbra -c '/opt/zimbra/bin/postconf -e disable_vrfy_command=yes'
-su zimbra -c '/opt/zimbra/bin/postconf -e tls_medium_cipherlist="ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384"'
-su zimbra -c '/opt/zimbra/bin/postconf -e tls_preempt_cipherlist=no'
+su - zimbra -c '/opt/zimbra/bin/postconf -e fast_flush_domains=""'
+su - zimbra -c '/opt/zimbra/bin/postconf -e smtpd_etrn_restrictions=reject'
+su - zimbra -c '/opt/zimbra/bin/postconf -e disable_vrfy_command=yes'
+su - zimbra -c '/opt/zimbra/bin/postconf -e tls_medium_cipherlist="ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384"'
+su - zimbra -c '/opt/zimbra/bin/postconf -e tls_preempt_cipherlist=no'
 
-su zimbra -c '/opt/zimbra/bin/zmlocalconfig -e ldap_common_tlsprotocolmin="3.3"'
-su zimbra -c '/opt/zimbra/bin/zmlocalconfig -e ldap_common_tlsciphersuite="HIGH"'
-su zimbra -c '/opt/zimbra/bin/zmlocalconfig -e ldap_starttls_supported=1'
-su zimbra -c '/opt/zimbra/bin/zmlocalconfig -e zimbra_require_interprocess_security=1'
-su zimbra -c '/opt/zimbra/bin/zmlocalconfig -e ldap_starttls_required=true'
+su - zimbra -c '/opt/zimbra/bin/zmlocalconfig -e ldap_common_tlsprotocolmin="3.3"'
+su - zimbra -c '/opt/zimbra/bin/zmlocalconfig -e ldap_common_tlsciphersuite="HIGH"'
+su - zimbra -c '/opt/zimbra/bin/zmlocalconfig -e ldap_starttls_supported=1'
+su - zimbra -c '/opt/zimbra/bin/zmlocalconfig -e zimbra_require_interprocess_security=1'
+su - zimbra -c '/opt/zimbra/bin/zmlocalconfig -e ldap_starttls_required=true'
 
-su zimbra -c '/opt/zimbra/bin/zmlocalconfig -e alias_login_enabled=false'
-su zimbra -c '/opt/zimbra/bin/zmlocalconfig -e zimbra_same_site_cookie="Strict"'
+su - zimbra -c '/opt/zimbra/bin/zmlocalconfig -e alias_login_enabled=false'
+su - zimbra -c '/opt/zimbra/bin/zmlocalconfig -e zimbra_same_site_cookie="Strict"'
 
-su zimbra -c '/opt/zimbra/bin/zmprov < /tmp/provfile'
-su zimbra -c '/opt/zimbra/bin/zmcontrol restart'
+su - zimbra -c '/opt/zimbra/bin/zmprov < /tmp/provfile'
+su - zimbra -c '/opt/zimbra/bin/zmcontrol restart'
 
 echo
 echo
