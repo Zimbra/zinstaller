@@ -495,6 +495,7 @@ if [ "$LETSENCRYPT" != "${LETSENCRYPT#[Yy]}" ] ;then # this grammar (the #[] ope
     else
         echo -e "${RED}Could not resolve hostname ...${NC}." 
         echo -e "${RED}Correct your nameserver entries and run the command ${GREEN}/etc/cron.daily/letsencrypt-zimbra${NC}."
+	fi
 fi
 
 echo "Setting optimal security settings"
