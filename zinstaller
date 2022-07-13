@@ -134,7 +134,7 @@ echo "Updating system and installing some essential packages ..."
 #What are the other essential packages?
 DEBIAN_FRONTEND=noninteractive apt-get update -qq -y < /dev/null > /dev/null
 DEBIAN_FRONTEND=noninteractive apt-get upgrade -qq -y < /dev/null > /dev/null
-DEBIAN_FRONTEND=noninteractive apt-get install -qq -y dnsmasq lsb-release net-tools netfilter-persistent dnsutils iptables sed wget< /dev/null > /dev/null
+DEBIAN_FRONTEND=noninteractive apt-get install -qq -y dnsmasq lsb-release apt-utils net-tools netfilter-persistent dnsutils iptables sed wget< /dev/null > /dev/null
 
 echo "Disabling some of the non-essential services for Zimbra ..."
 systemctl stop postfix
