@@ -505,6 +505,7 @@ ZIMBRAIP=$(netstat -tulpn | grep slapd | awk '{print $4}' | awk -F ':' '{print $
 cat >> /tmp/provfile << EOF
 mcf zimbraPublicServiceProtocol https
 mcf zimbraPublicServicePort 443
+mcf zimbraPublicServiceHostname $HOSTNAME
 mcf zimbraReverseProxySSLProtocols TLSv1.2
 mcf +zimbraReverseProxySSLProtocols TLSv1.3
 mcf zimbraReverseProxySSLCiphers 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384'
