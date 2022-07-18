@@ -498,6 +498,13 @@ if [ "$LETSENCRYPT" != "${LETSENCRYPT#[Yy]}" ] ;then # this grammar (the #[] ope
 	fi
 fi
 
+echo "Deploying additional Zimlets"
+DEBIAN_FRONTEND=noninteractive apt-get install -qq -y zimbra-zimlet-user-sessions-management< /dev/null > /dev/null
+
+if [[ $(hostname --fqdn) == *"barrydegraaff"* ]] || [[ $(hostname --fqdn) == *"zimbra.tech"* ]]; then
+DEBIAN_FRONTEND=noninteractive apt-get install -qq -y zimbra-zimlet-sideloader< /dev/null > /dev/null
+fi
+
 echo "Setting optimal security settings"
 rm -Rf /tmp/provfile
 ZIMBRAIP=$(netstat -tulpn | grep slapd | awk '{print $4}' | awk -F ':' '{print $1}')
