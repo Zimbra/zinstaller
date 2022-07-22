@@ -317,7 +317,7 @@ update-locale LC_ALL="en_US.UTF-8"
 if [ ! -d "/tmp/zcs" ]; then
     mkdir /tmp/zcs
 else
-    rm -rf tmp/zcs/*    #Dangerous Command
+    rm -rf /tmp/zcs/*    #Dangerous Command
 fi
 
 #Download binaries
