@@ -1,5 +1,12 @@
 #!/bin/bash
 
+if (lsb_release -d) | grep -q "Ubuntu 20"; then
+   echo $(lsb_release -d) is supported
+else
+   echo $(lsb_release -d) is not supported
+   exit
+fi
+
 # Argbash - see https://argbash.io for more info
 die() {
 	local _ret="${2:-1}"
