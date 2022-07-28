@@ -212,7 +212,7 @@ fi
 
 # Update firewall
 echo "Enabling firewall for Zimbra ports ..."
-echo "${GREEN}Ports 22/25/143/80/443/995/993/7071 will be opened to the internet.${NC}"
+echo "Ports 22/25/143/80/443/995/993/9071 will be opened to the internet."
 echo "Please check your iptables for more info."
 
 #flushing iptables while having INPUT=DROP policy will terminate ssh connection
@@ -238,7 +238,7 @@ iptables -A INPUT -p tcp -m tcp --dport 143 -j ACCEPT
 iptables -A INPUT -p tcp -m tcp --dport 993  -j ACCEPT
 iptables -A INPUT -p tcp -m tcp --dport 995  -j ACCEPT
 iptables -A INPUT -p tcp -m tcp --dport 443  -j ACCEPT
-iptables -A INPUT -p tcp -m tcp --dport 7071  -j ACCEPT
+iptables -A INPUT -p tcp -m tcp --dport 9071  -j ACCEPT
 iptables -A INPUT -p tcp -m tcp --dport 80  -j ACCEPT
 iptables -A INPUT -p tcp -m tcp --dport 25  -j ACCEPT
 iptables -A INPUT -p tcp -m tcp --dport 22 -j ACCEPT
@@ -566,6 +566,10 @@ su - zimbra -c '/opt/zimbra/bin/zmlocalconfig -e alias_login_enabled=false'
 su - zimbra -c '/opt/zimbra/bin/zmlocalconfig -e zimbra_same_site_cookie="Strict"'
 
 su - zimbra -c '/opt/zimbra/bin/zmprov < /tmp/provfile'
+
+#https://wiki.zimbra.com/wiki/Enabling_Admin_Console_Proxy
+su - zimbra -c "/opt/zimbra/libexec/zmproxyconfig -e -w -C -H $HOSTNAME"
+
 su - zimbra -c '/opt/zimbra/bin/zmcontrol restart'
 
 echo
@@ -573,7 +577,7 @@ echo
 echo "Zimbra installation details:"
 echo
 echo "  - Webmail Login:  https://${HOSTNAME}"
-echo "  - Admin Console:  https://${HOSTNAME}:7071"
+echo "  - Admin Console:  https://${HOSTNAME}:9071"
 echo "  - Admin Username: admin"
 echo "  - Admin Password: ${MYPASSWORD}"
 echo ""
