@@ -1,6 +1,6 @@
 # Automated installation of Zimbra and Lets Encrypt
 
-This article introduces the `zinstaller` script that can be used for automating the installation of Zimbra. The `zinstaller` script will install a Zimbra 9 single server on Ubuntu 18 or Ubuntu 20 and will also obtain and install a 60-day trial license.
+This article introduces the `zinstaller` script that can be used for automating the installation of Zimbra. The `zinstaller` script will install a Zimbra 9 single server on Ubuntu 20 and will also obtain and install a 60-day trial license.
 
 If you are new to Zimbra, the `zinstaller` script makes it easy to evaluate Zimbra on premise. If you already run Zimbra you can use `zinstaller` to preview the latest features. Developers can use `zinstaller` as an easy way to set-up a development server.
 
