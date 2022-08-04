@@ -78,14 +78,14 @@ parse_commandline() {
                 ;;
             -a|--apache)
                 test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
-                _arg_timezone="$2"
+                _arg_apace="$2"
                 shift
                 ;;
             --apache=*)
-                _arg_timezone="${_key##--timezone=}"
+                _arg_apache="${_key##--timezone=}"
                 ;;
             -a*)
-                _arg_timezone="${_key##-t}"
+                _arg_apache="${_key##-t}"
                 ;;
             -l|--letsencrypt)
                 test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
@@ -154,8 +154,9 @@ echo "Updating system and installing some essential packages ..."
 #What are the other essential packages?
 DEBIAN_FRONTEND=noninteractive apt-get update -qq -y < /dev/null > /dev/null
 DEBIAN_FRONTEND=noninteractive apt-get upgrade -qq -y < /dev/null > /dev/null
+DEBIAN_FRONTEND=noninteractive apt-get install -qq -y apt-utils< /dev/null > /dev/null
 DEBIAN_FRONTEND=noninteractive apt-get install -qq -y netcat-openbsd sudo libidn11 libpcre3 libgmp10 libexpat1 libstdc++6 perl libaio1 unzip pax sysstat sqlite3< /dev/null > /dev/null
-DEBIAN_FRONTEND=noninteractive apt-get install -qq -y dnsmasq lsb-release apt-utils net-tools netfilter-persistent dnsutils iptables sed wget< /dev/null > /dev/null
+DEBIAN_FRONTEND=noninteractive apt-get install -qq -y dnsmasq lsb-release net-tools netfilter-persistent dnsutils iptables sed wget< /dev/null > /dev/null
 
 echo "Disabling some of the non-essential services for Zimbra ..."
 systemctl stop postfix
