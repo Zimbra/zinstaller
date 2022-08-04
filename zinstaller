@@ -30,9 +30,10 @@ print_help() {
     printf '\t%s\n' "-n, --hostname: Hostname to use for the server (default: mail)"
     printf '\t%s\n' "-t, --timezone: Timezone to set the server to user (optional) (default: 'Singapore')"
     printf '\t%s\n' "-l, --letsencypt: Use Let's Encrypt for providing TLS certificates (optional y/n) (default: 'n')"
+    printf '\t%s\n' "-a, --apache: Add support for spell check and convertd (optional y/n) (default: 'n')"
     printf '\t%s\n' "-h, --help: Prints help"
     printf '%s\n'
-    printf '%s\n' "Usage: $(basename $0) [-p mypassword] [-t 'TimeZone'] [-n Server-Name] [-l y] Domain-Name"
+    printf '%s\n' "Usage: $(basename $0) [-p mypassword] [-t 'TimeZone'] [-n Server-Name] [-a y] [-l y] Domain-Name"
     printf '%s\n' "Example: $(basename $0) -p alRTFGmn1 -n zmail -t 'Europe/London' -l y myorg.co.uk"
     exit 1
 }
@@ -73,6 +74,17 @@ parse_commandline() {
                 _arg_timezone="${_key##--timezone=}"
                 ;;
             -t*)
+                _arg_timezone="${_key##-t}"
+                ;;
+            -a|--apache)
+                test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
+                _arg_timezone="$2"
+                shift
+                ;;
+            --apache=*)
+                _arg_timezone="${_key##--timezone=}"
+                ;;
+            -a*)
                 _arg_timezone="${_key##-t}"
                 ;;
             -l|--letsencrypt)
@@ -132,6 +144,7 @@ DOMAIN="$_arg_domain"
 HOSTNAME="${_arg_hostname:="mail"}"."$DOMAIN"
 TIMEZONE="${_arg_timezone:-"Asia/Singapore"}"
 LETSENCRYPT="${_arg_letsencrypt:-"n"}"
+APACHE="${_arg_apache:-"n"}"
 MYPASSWORD="${_arg_password:-$(openssl rand -base64 9)}"
 GREEN='\033[0;32m'
 RED='\033[0;31m'
@@ -445,10 +458,16 @@ zimbraWebProxy="TRUE"
 zimbra_ldap_userdn="uid=zimbra,cn=admins,cn=zimbra"
 zimbra_require_interprocess_security="1"
 zimbra_server_hostname="$HOSTNAME"
-INSTALL_PACKAGES="zimbra-core zimbra-ldap zimbra-logger zimbra-mta zimbra-snmp zimbra-store zimbra-apache zimbra-spell zimbra-convertd zimbra-memcached zimbra-proxy"
 EOF
 
+if [[ "$APACHE" == "y" ]]; then
+    echo 'INSTALL_PACKAGES="zimbra-core zimbra-ldap zimbra-logger zimbra-mta zimbra-snmp zimbra-store zimbra-apache zimbra-spell zimbra-convertd zimbra-memcached zimbra-proxy"' >>/tmp/zcs/zconfig
+else
+    echo 'INSTALL_PACKAGES="zimbra-core zimbra-ldap zimbra-logger zimbra-mta zimbra-store zimbra-memcached zimbra-proxy"' >>/tmp/zcs/zconfig
+fi
+
 > /tmp/zcs/zkeys
+if [[ "$APACHE" == "y" ]]; then
 cat <<EOF >/tmp/zcs/zkeys
 y
 y
@@ -471,6 +490,30 @@ y
 n
 y
 EOF
+else
+cat <<EOF >/tmp/zcs/zkeys
+y
+y
+y
+y
+y
+y
+n
+n
+y
+n
+n
+n
+y
+y
+n
+n
+n
+y
+n
+y
+EOF
+fi
 
 D=`date +%s`
 echo "Download the trial license ..."
