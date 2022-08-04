@@ -1,12 +1,5 @@
 #!/bin/bash
 
-if (lsb_release -d) | grep -q "Ubuntu 20"; then
-   echo $(lsb_release -d) is supported
-else
-   echo $(lsb_release -d) is not supported
-   exit
-fi
-
 # Argbash - see https://argbash.io for more info
 die() {
 	local _ret="${2:-1}"
@@ -19,6 +12,13 @@ u=`id -un`
 if [ x$u != "xroot" ]; then
     echo "Error: must be run as root user"
     exit 1
+fi
+
+if (lsb_release -d) | grep -q "Ubuntu 20"; then
+   echo $(lsb_release -d) is supported
+else
+   echo $(lsb_release -d) is not supported
+   exit
 fi
 
 print_help() {
@@ -226,7 +226,7 @@ fi
 
 # Update firewall
 echo "Enabling firewall for Zimbra ports ..."
-echo "Ports 22/25/143/80/443/995/993/9071 will be opened to the internet."
+echo -e "${GREEN}Ports 22/25/143/80/443/995/993/7071 will be opened to the internet.${NC}"
 echo "Please check your iptables for more info."
 
 #flushing iptables while having INPUT=DROP policy will terminate ssh connection
@@ -468,30 +468,6 @@ else
 fi
 
 > /tmp/zcs/zkeys
-if [[ "$APACHE" == "y" ]]; then
-cat <<EOF >/tmp/zcs/zkeys
-y
-y
-y
-y
-y
-y
-n
-y
-y
-y
-y
-y
-y
-y
-n
-n
-n
-y
-n
-y
-EOF
-else
 cat <<EOF >/tmp/zcs/zkeys
 y
 y
@@ -502,9 +478,9 @@ y
 n
 n
 y
-n
-n
-n
+$APACHE
+$APACHE
+$APACHE
 y
 y
 n
@@ -514,7 +490,6 @@ y
 n
 y
 EOF
-fi
 
 D=`date +%s`
 echo "Download the trial license ..."
