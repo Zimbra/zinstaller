@@ -149,6 +149,7 @@ MYPASSWORD="${_arg_password:-$(openssl rand -base64 9)}"
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
+SYSTEMMEMORY=$(($(grep MemAvailable /proc/meminfo | awk '{print $2}')/1024/1024))
 
 echo "Updating system and installing some essential packages ..."
 #What are the other essential packages?
@@ -156,7 +157,7 @@ DEBIAN_FRONTEND=noninteractive apt-get update -qq -y < /dev/null > /dev/null
 DEBIAN_FRONTEND=noninteractive apt-get upgrade -qq -y < /dev/null > /dev/null
 DEBIAN_FRONTEND=noninteractive apt-get install -qq -y apt-utils< /dev/null > /dev/null
 DEBIAN_FRONTEND=noninteractive apt-get install -qq -y netcat-openbsd sudo libidn11 libpcre3 libgmp10 libexpat1 libstdc++6 perl libaio1 unzip pax sysstat sqlite3< /dev/null > /dev/null
-DEBIAN_FRONTEND=noninteractive apt-get install -qq -y dnsmasq lsb-release net-tools netfilter-persistent dnsutils iptables sed wget< /dev/null > /dev/null
+DEBIAN_FRONTEND=noninteractive apt-get install -qq -y dnsmasq lsb-release net-tools netfilter-persistent dnsutils iptables sed wget rsyslog ldapscripts< /dev/null > /dev/null
 
 echo "Disabling some of the non-essential services for Zimbra ..."
 systemctl stop postfix
@@ -417,7 +418,7 @@ SNMPNOTIFY="yes"
 SNMPTRAPHOST="$HOSTNAME"
 SPELLURL="http://$HOSTNAME:7780/aspell.php"
 STARTSERVERS="yes"
-SYSTEMMEMORY="7.5"
+SYSTEMMEMORY="$SYSTEMMEMORY"
 TRAINSAHAM="ham.account@$DOMAIN"
 TRAINSASPAM="spam.account@$DOMAIN"
 UIWEBAPPS="yes"
@@ -613,6 +614,10 @@ su - zimbra -c '/opt/zimbra/bin/zmprov < /tmp/provfile'
 
 #https://wiki.zimbra.com/wiki/Enabling_Admin_Console_Proxy
 su - zimbra -c "/opt/zimbra/libexec/zmproxyconfig -e -w -C -H $HOSTNAME"
+
+# Update Authkeys and Syslog
+su - zimbra -c '/opt/zimbra/bin/zmupdateauthkeys'
+/opt/zimbra/libexec/zmsyslogsetup
 
 su - zimbra -c '/opt/zimbra/bin/zmcontrol restart'
 
