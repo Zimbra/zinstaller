@@ -1,5 +1,12 @@
 #!/bin/bash
 
+if (lsb_release -d) | grep -q "Ubuntu 20"; then
+   echo $(lsb_release -d) is supported
+else
+   echo $(lsb_release -d) is not supported
+   exit
+fi
+
 # Argbash - see https://argbash.io for more info
 die() {
 	local _ret="${2:-1}"
@@ -14,13 +21,6 @@ if [ x$u != "xroot" ]; then
     exit 1
 fi
 
-if (lsb_release -d) | grep -q "Ubuntu 20"; then
-   echo $(lsb_release -d) is supported
-else
-   echo $(lsb_release -d) is not supported
-   exit
-fi
-
 print_help() {
     printf '%s\n'
     printf '%s\n' "Install and configure Zimbra 9.0 ..."
@@ -33,8 +33,8 @@ print_help() {
     printf '\t%s\n' "-a, --apache: Add support for spell check and convertd (optional y/n) (default: 'n')"
     printf '\t%s\n' "-h, --help: Prints help"
     printf '%s\n'
-    printf '%s\n' "Usage: $(basename $0) [-p mypassword] [-t 'TimeZone'] [-n Server-Name] [-a y] [-l y] Domain-Name"
-    printf '%s\n' "Example: $(basename $0) -p alRTFGmn1 -n zmail -t 'Europe/London' -l y myorg.co.uk"
+    printf '%s\n' "Usage: $(basename $0) [-p mypassword] [-t 'TimeZone'] [-n Server-Name] [-a n] [-l y] Domain-Name"
+    printf '%s\n' "Example: $(basename $0) -p alRTFGmn1 -n zmail -t 'Europe/London' -a n -l y myorg.co.uk"
     exit 1
 }
 
@@ -226,7 +226,7 @@ fi
 
 # Update firewall
 echo "Enabling firewall for Zimbra ports ..."
-echo -e "${GREEN}Ports 22/25/143/80/443/995/993/7071 will be opened to the internet.${NC}"
+echo "Ports 22/25/143/80/443/995/993/9071 will be opened to the internet."
 echo "Please check your iptables for more info."
 
 #flushing iptables while having INPUT=DROP policy will terminate ssh connection
@@ -468,6 +468,30 @@ else
 fi
 
 > /tmp/zcs/zkeys
+if [[ "$APACHE" == "y" ]]; then
+cat <<EOF >/tmp/zcs/zkeys
+y
+y
+y
+y
+y
+y
+n
+y
+y
+y
+y
+y
+y
+y
+n
+n
+n
+y
+n
+y
+EOF
+else
 cat <<EOF >/tmp/zcs/zkeys
 y
 y
@@ -478,9 +502,9 @@ y
 n
 n
 y
-$APACHE
-$APACHE
-$APACHE
+n
+n
+n
 y
 y
 n
@@ -490,6 +514,7 @@ y
 n
 y
 EOF
+fi
 
 D=`date +%s`
 echo "Download the trial license ..."
@@ -500,12 +525,12 @@ if [ ! -s "/tmp/zcs/ZCSLicense.xml" ]; then
 fi
 echo -e "${GREEN}... Done.${NC}"
 echo "Installing the Zimbra binaries ..."
-echo -e "For more details you can open a new terminal and run tail -f ${GREEN}/tmp/install.log.*${NC}."
+echo -e "For more details you can open a new terminal and run  ${GREEN}tail -f /tmp/install.log.*${NC}."
 cd /tmp/zcs/zcs-* && ./install.sh -l /tmp/zcs/ZCSLicense.xml -s < /tmp/zcs/zkeys >> /tmp/zcs/install-$D.log 2>&1
 echo -e "${GREEN}... Done.${NC}"
 
 echo "Setting up your Zimbra configuration, this can take up to 20 minutes or slightly more."
-echo -e "For more details you can open a new terminal and run tail -f ${GREEN}/tmp/zmsetup.log${NC}."
+echo -e "For more details you can open a new terminal and run ${GREEN}tail -f /tmp/zmsetup.log${NC}."
 /opt/zimbra/libexec/zmsetup.pl -c /tmp/zcs/zconfig >> /tmp/zcs/install-$D.log 2>&1
 echo "Allow mailbox service to start ..."
 for i in {15..0}; do echo -ne "${RED}$i${NC}\033[0K\r"; sleep 1; done; echo
