@@ -590,6 +590,8 @@ mc default zimbraPrefShortEmailAddress FALSE
 
 mcf +zimbraMailTrustedIP 127.0.0.1
 mcf +zimbraMailTrustedIP $ZIMBRAIP
+mcf +zimbraGalLdapAttrMap manager=manager
+mcf zimbraBackupReportEmailSender admin@$DOMAIN zimbraBackupReportEmailRecipients admin@$DOMAIN
 EOF
 
 sed -i 's/-server -Dhttps.protocols=TLSv1.2 -Djdk.tls.client.protocols=TLSv1.2/-server -Dhttps.protocols=TLSv1.2,TLSv1.3 -Djdk.tls.client.protocols=TLSv1.2,TLSv1.3/g' /opt/zimbra/conf/localconfig.xml
