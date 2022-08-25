@@ -576,6 +576,7 @@ mcf +zimbraResponseHeader "Strict-Transport-Security: max-age=31536000; includeS
 mcf +zimbraResponseHeader "X-Content-Type-Options: nosniff"
 mcf +zimbraResponseHeader "X-Robots-Tag: noindex"
 mcf zimbraMailKeepOutWebCrawlers TRUE
+mcf zimbraSmtpSendAddMailer FALSE
 
 mcf zimbraSSLDHParam /etc/ffdhe4096.pem
 
