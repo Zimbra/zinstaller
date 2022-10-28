@@ -303,7 +303,7 @@ version=$(lsb_release -d | awk -F" " '{print $3}' | cut -c 1-5)
 if [ "$LETSENCRYPT" != "${LETSENCRYPT#[Yy]}" ] ;then # this grammar (the #[] operator) means that the variable $answer where any Y or y in 1st position will be dropped if they exist.
    if [ $(dig +short type257 $(hostname --d) | grep "letsencrypt.org" | grep -v "issuewild" | grep "issue" | wc -l) -eq 1 ]; then   
       echo "Installing certbot"
-      apt install -y python3 python3-venv libaugeas0
+      apt install -y python3 python3-venv libaugeas0 python3-venv
       python3 -m venv /opt/certbot/
       /opt/certbot/bin/pip install --upgrade pip
       /opt/certbot/bin/pip install certbot
