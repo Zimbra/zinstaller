@@ -11,7 +11,8 @@ If your mail server is reachable under mail.example.com and you want your email 
 ```
 wget https://raw.githubusercontent.com/Zimbra/zinstaller/master/zinstaller -O /root/zinstaller
 chmod +x /root/zinstaller
-/root/zinstaller -p put-a-password-here -n mail -t 'Europe/London' --letsencrypt y example.com
+/root/zinstaller -p put-a-password-here -n mail -t 'Europe/London' -a n --letsencrypt y example.com
+
 ```
 
 Having a poor connection over SSH? Try using `screen`:
@@ -21,7 +22,7 @@ apt -y install screen
 screen
 wget https://raw.githubusercontent.com/Zimbra/zinstaller/master/zinstaller -O /root/zinstaller
 chmod +x /root/zinstaller
-/root/zinstaller -p put-a-password-here -n mail -t 'Europe/London' --letsencrypt y example.com
+/root/zinstaller -p put-a-password-here -n mail -t 'Europe/London' -a n --letsencrypt y example.com
 ```
 Should your connection drop, you can use the ssh command like normal and resume your session using:
 
