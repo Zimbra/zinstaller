@@ -141,6 +141,7 @@ assign_positional_args 1 "${_positionals[@]}"
 
 MYIP=$(hostname -I | cut -f1 -d" " | tr -d '[:space:]')
 DOMAIN="$_arg_domain"
+HOSTONLY="${_arg_hostname:="mail"}"
 HOSTNAME="${_arg_hostname:="mail"}"."$DOMAIN"
 TIMEZONE="${_arg_timezone:-"Asia/Singapore"}"
 LETSENCRYPT="${_arg_letsencrypt:-"n"}"
@@ -289,7 +290,7 @@ fi
 # Reset the hosts file
 echo "Rewriting the /etc/hosts file ..."
 mv /etc/hosts /etc/hosts.old
-printf '127.0.0.1\tlocalhost.localdomain\tlocalhost\n127.0.1.1\tubuntu\n'$MYIP'\t'$HOSTNAME'\tzimbra\t' | tee -a /etc/hosts >/dev/null 2>&1
+printf '127.0.0.1\tlocalhost.localdomain\tlocalhost\n127.0.1.1\tubuntu\n'$MYIP'\t'$HOSTNAME'\t'$HOSTONLY'\t' | tee -a /etc/hosts >/dev/null 2>&1
 echo -e "${GREEN}... Done.${NC}"
 echo "Setting hostname ($HOSTNAME) and timezone ($TIMEZONE) ..."
 hostnamectl set-hostname $HOSTNAME >/dev/null 2>&1
