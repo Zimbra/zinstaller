@@ -604,7 +604,7 @@ wget https://raw.githubusercontent.com/internetstandards/dhe_groups/master/ffdhe
 su - zimbra -c '/opt/zimbra/bin/postconf -e fast_flush_domains=""'
 su - zimbra -c '/opt/zimbra/bin/postconf -e smtpd_etrn_restrictions=reject'
 su - zimbra -c '/opt/zimbra/bin/postconf -e disable_vrfy_command=yes'
-su - zimbra -c '/opt/zimbra/bin/postconf -e tls_medium_cipherlist="ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384"'
+su - zimbra -c '/opt/zimbra/bin/postconf -e tls_medium_cipherlist="!DH:!EDH:!ADH:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384"'
 su - zimbra -c '/opt/zimbra/bin/postconf -e tls_preempt_cipherlist=no'
 
 su - zimbra -c '/opt/zimbra/bin/zmlocalconfig -e ldap_common_tlsprotocolmin="3.3"'
