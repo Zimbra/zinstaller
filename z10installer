@@ -611,6 +611,9 @@ su - zimbra -c "/opt/zimbra/libexec/zmproxyconfig -e -w -C -H $HOSTNAME"
 su - zimbra -c '/opt/zimbra/bin/zmupdateauthkeys'
 /opt/zimbra/libexec/zmsyslogsetup
 
+su - zimbra -c '/opt/zimbra/bin/zmzimletctl undeploy com_zimbra_clientuploader'
+rm -Rf /opt/zimbra/lib/ext/com_zimbra_clientuploader
+
 su - zimbra -c '/opt/zimbra/bin/zmcontrol restart'
 
 echo
