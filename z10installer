@@ -582,6 +582,12 @@ mcf +zimbraMailTrustedIP 127.0.0.1
 mcf +zimbraMailTrustedIP $MYIP
 mcf +zimbraGalLdapAttrMap manager=manager
 mcf zimbraBackupReportEmailSender admin@$DOMAIN zimbraBackupReportEmailRecipients admin@$DOMAIN
+
+ms `zmhostname` zimbraFileUploadMaxSize 80000000
+ms `zmhostname` zimbraMailContentMaxSize 80000000
+mcf zimbraMtaMaxMessageSize 80000000
+mcf zimbraFileUploadMaxSize 80000000
+mcf zimbraMailContentMaxSize 80000000
 EOF
 
 sed -i 's/-server -Dhttps.protocols=TLSv1.2 -Djdk.tls.client.protocols=TLSv1.2/-server -Dhttps.protocols=TLSv1.2,TLSv1.3 -Djdk.tls.client.protocols=TLSv1.2,TLSv1.3/g' /opt/zimbra/conf/localconfig.xml
