@@ -583,8 +583,8 @@ mcf +zimbraMailTrustedIP $MYIP
 mcf +zimbraGalLdapAttrMap manager=manager
 mcf zimbraBackupReportEmailSender admin@$DOMAIN zimbraBackupReportEmailRecipients admin@$DOMAIN
 
-ms `zmhostname` zimbraFileUploadMaxSize 80000000
-ms `zmhostname` zimbraMailContentMaxSize 80000000
+ms $HOSTNAME zimbraFileUploadMaxSize 80000000
+ms $HOSTNAME zimbraMailContentMaxSize 80000000
 mcf zimbraMtaMaxMessageSize 80000000
 mcf zimbraFileUploadMaxSize 80000000
 mcf zimbraMailContentMaxSize 80000000
