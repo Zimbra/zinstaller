@@ -611,7 +611,9 @@ wget https://raw.githubusercontent.com/internetstandards/dhe_groups/master/ffdhe
 su - zimbra -c '/opt/zimbra/bin/postconf -e fast_flush_domains=""'
 su - zimbra -c '/opt/zimbra/bin/postconf -e smtpd_etrn_restrictions=reject'
 su - zimbra -c '/opt/zimbra/bin/postconf -e disable_vrfy_command=yes'
-su - zimbra -c '/opt/zimbra/bin/postconf -e tls_medium_cipherlist=$(/opt/zimbra/common/bin/openssl ciphers)'su - zimbra -c '/opt/zimbra/bin/postconf -e tls_preempt_cipherlist=no'
+su - zimbra -c '/opt/zimbra/bin/postconf -e tls_medium_cipherlist=$(/opt/zimbra/common/bin/openssl ciphers)'
+su - zimbra -c '/opt/zimbra/bin/postconf -e tls_preempt_cipherlist=no'
+
 su - zimbra -c '/opt/zimbra/bin/zmlocalconfig -e ldap_common_tlsprotocolmin="3.3"'
 su - zimbra -c '/opt/zimbra/bin/zmlocalconfig -e ldap_common_tlsciphersuite="HIGH"'
 su - zimbra -c '/opt/zimbra/bin/zmlocalconfig -e ldap_starttls_supported=1'
