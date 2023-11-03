@@ -8,7 +8,7 @@ y --> MTA
 n --> DNS Cache
 n --> SNMP
 y --> Store
-n --> Apace
+n --> Apache
 n --> Spell
 y --> Convertd
 y --> Memcache
