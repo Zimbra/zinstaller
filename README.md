@@ -1,3 +1,7 @@
+# CURRENTLY NOT WORKING DUE TO NEW LICENSE SERVER
+
+The automated installer is currenly broken as Zimbra's new license server does not give out trial licenses anymore, will update this repo as a workaround becomes available.
+
 # Automated installation of Zimbra and Lets Encrypt
 
 This article introduces the `zinstaller` script that can be used for automating the installation of Zimbra. The `zinstaller` script will install a Zimbra 10 single server on Ubuntu 20 and will also obtain and install a 60-day trial license.
