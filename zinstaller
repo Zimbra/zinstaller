@@ -330,11 +330,11 @@ if [ "$LETSENCRYPT" != "${LETSENCRYPT#[Yy]}" ] ;then # this grammar (the #[] ope
       /opt/certbot/bin/pip install --upgrade pip
       /opt/certbot/bin/pip install certbot
       ln -s /opt/certbot/bin/certbot /usr/local/sbin/certbot
-      /usr/local/sbin/certbot certonly -d $(hostname --fqdn) --standalone --preferred-chain  "ISRG Root X1" --agree-tos --register-unsafely-without-email --key-type rsa
+      /usr/local/sbin/certbot certonly -d $(hostname --fqdn) --standalone --preferred-chain  "ISRG Root X1" --agree-tos --register-unsafely-without-email
       cat >> /usr/local/sbin/letsencrypt-zimbra << EOF
 #!/bin/bash
 MAILTO=""
-/usr/local/sbin/certbot certonly -d $(hostname --fqdn) --standalone -n --preferred-chain  "ISRG Root X1" --agree-tos --register-unsafely-without-email --key-type rsa
+/usr/local/sbin/certbot certonly -d $(hostname --fqdn) --standalone -n --preferred-chain  "ISRG Root X1" --agree-tos --register-unsafely-without-email
 
 cp "/etc/letsencrypt/live/$(hostname --fqdn)/privkey.pem" /opt/zimbra/ssl/zimbra/commercial/commercial.key
 chown zimbra:zimbra /opt/zimbra/ssl/zimbra/commercial/commercial.key
