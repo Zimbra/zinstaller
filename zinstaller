@@ -300,7 +300,7 @@ netfilter-persistent save
 
 #Check Firewall
 response=$(curl --write-out '%{http_code}' --silent --output /dev/null https://license.zimbra.com)
-if [[ "$response" == "200" ]]; then
+if [[ "$response" == "502" ]]; then
     echo "Zimbra License server reachable ..."
     echo -e "${GREEN}... Done.${NC}"
 else
