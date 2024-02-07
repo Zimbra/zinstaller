@@ -1,21 +1,11 @@
 #!/usr/bin/env bash
 
-# This script is mostly based on ->
-# https://github.com/Zimbra/zinstaller/blob/main/zinstaller script
-
-# Warnings :	This script is still a WORK IN PROGRESS. Not fully tested.
-#		Script to install Zimbra Classic - ONLY SINGLE NODE on a provided remote server
-#
-# Install scripts will be copied under known directory.
-# Along with all other required files and install can be triggered
-############################################################################################
-
 function display_options {
 cat << HELP_EOF
 	"$0" -i <install-config> -l <license> -t <build-artifact> -a <admin-pass> --optional-pkg <pkg1> --optional-pkg <pkg2>
 	options:
 	-h, --help			Help
-	-p, --admin-pass		Admin account password to set. (Default: zimbra)
+	-p, --admin-pass		Admin account password to set. (Default: Random)
 	-l, --license			License key or License file to be activated on the zimbra server. (Required) (No default)
 	-i, --install-config		The default install config to configure zimbra server. (Default = $(pwd)/zim-install-config)
 	-b, --build-artifact		Build artifact / Tar file path (Required) (Default = Build present in current directory)
@@ -39,10 +29,10 @@ function main {
 	INSTALL_CONFIG="$dir_script/zim-install-config"
 
 	HOSTNAME="$(hostname -f)"
-	HOST_IP="$(curl -s ifconfig.me)"
+	HOST_IP="$(curl -s api.ipify.org)"
 	# HOST_IP="$(hostname -I | cut -f1 -d" " | tr -d '[:space:]')"
 	DOMAIN_NAME="$HOSTNAME"
-	ADMIN_PASS="zimbra"
+	ADMIN_PASS="$(openssl rand -base64 48 | cut -c1-12)"
 	TIMEZONE="Asia/Singapore"
 	CURRENT_USER="$(whoami)"
 	sys_mem_kb="$(cat /proc/meminfo | grep MemAvailable | awk '{print $2}')"
@@ -63,8 +53,10 @@ function main {
 		zimbra-proxy
 		zimbra-archiving
 		zimbra-onlyoffice
-		zimbra-license-daemon
 	)
+	if echo "$ZCS_VERSION" | grep $ver_pattern >> /dev/null; then
+		INSTALL_PKGS+=("zimbra-license-daemon")
+	fi
 
 	redhat_release="false"
 	command -v yum &>/dev/null
@@ -164,7 +156,7 @@ function check_vars {
 
 	[[ ! -f "$BUILD_ARTIFACT" ]] && echo "Cannot locate the build artifact (zcs-*.tgz) file." && exit 1;
 	[[ -z "$HOSTNAME" ]] && echo "Cannot find \$HOSTNAME." && exit 1;
-	[[ -z "$ADMIN_PASS " ]] && echo "Admin password is empty. Using default password." && ADMIN_PASS="zimbra"
+	[[ -z "$ADMIN_PASS " ]] && echo "Admin password is empty. Using default password."
 	[[ -z "$TIMEZONE " ]] && echo "Time-zone provided is empty. Setting default Time-zone." && TIMEZONE="Asia/Singapore"
 }
 
@@ -221,11 +213,11 @@ function install_zimbra {
 		# Need a logic to activate or skip licence activation here 
 		if echo "$ZCS_VERSION" | grep $ver_pattern >> /dev/null; then
 			# Version 10.1x.xx, use license key
-			sudo su - zimbra -c zmlicense -a $license_file || \
+			sudo su - zimbra -c "zmlicense -a $license_key" || \
 			echo "Licence activation failed, check logs."
 		else 
 			# Version 8815/900/1000, Use license file
-			sudo su - zimbra -c zmlicense -a $license_key || \
+			sudo su - zimbra -c "zmlicense -a $license_file" || \
 			echo "Licence activation failed, check logs."
 		fi
 		# Run post install config and print information.
@@ -367,7 +359,7 @@ function enable_ports {
 	echo "Please check your iptables for more info."
 
 	# Array of all ports required.
-	ports_arr=("25" "80" "110" "143" "443" "465" "587" "993" "995" "7071" "9071")
+	ports_arr=("25" "80" "110" "143" "443" "465" "587" "993" "995" "9071")
 
 	echo "Opening the ports with iptables..."
 	for port in ${ports_arr}; do
@@ -411,6 +403,7 @@ function update_zimbra_config {
 		-e "s|placeholder_install_pkgs|$install_pkgs_string|g" $INSTALL_CONFIG >> $WORK_DIR/install.conf
 	# Add License key if version => 10.1x.xx
 	if echo "$ZCS_VERSION" | grep $ver_pattern >> /dev/null; then
+		echo -e "\n\n"
 		echo "LICENSEACTIVATIONOPTION=1" >> $WORK_DIR/install.conf
 		echo "LICENSEKEY=$license_key" >> $WORK_DIR/install.conf
 	fi
@@ -513,7 +506,7 @@ function print_install_complete {
 	cat << here
 	Your new Zimbra installation details are:
 	- Webmail Login:	https://${HOSTNAME}
-	- Admin Console:	https://${HOSTNAME}:7071
+	- Admin Console:	https://${HOSTNAME}:9071
 	- Admin Username:	admin@${HOSTNAME}
 	- Admin Password:	$ADMIN_PASS
 here
