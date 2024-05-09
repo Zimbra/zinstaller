@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 function display_options {
 cat << HELP_EOF
@@ -8,7 +8,7 @@ cat << HELP_EOF
 	-p, --admin-pass		Admin account password to set. (Default: Random)
 	-l, --license			License key or License file to be activated on the zimbra server. (Required) (No default)
 	-i, --install-config		The default install config to configure zimbra server. (Default = $(pwd)/zim-install-config)
-	-b, --build-artifact		Build artifact / Tar file path (Required) (Default = Build present in current directory)
+	-b, --zcs-binary-tgz		Build artifact / Tar file path (Default = 10.0.0_GA Build will be downloaded)
 	-n, --hostname		  	Hostname for the server. (Default = $(hostname -f))
 	-d, --domain-name		Domain name for zimbra installation. (Default: DOMAIN_NAME = HOSTNAME)
 	-t, --time-zone			Time zone required to install. (Default: Asia/Singapore)
@@ -24,8 +24,8 @@ function main {
 	set -x
 	dir_script="$(cd "$(dirname "$0")" && pwd)"
 
-	BUILD_ARTIFACT="$(find $dir_script -name "zcs-*.tgz")"
-	WORK_DIR="$(ls "$BUILD_ARTIFACT" | sed s/.tgz//g)"
+	ZCS_BINARY_TGZ="$(find $dir_script -name "zcs-*.tgz")"
+	WORK_DIR="$(ls "$ZCS_BINARY_TGZ" | sed s/.tgz//g)"
 	INSTALL_CONFIG="$dir_script/zim-install-config"
 
 	HOSTNAME="$(hostname -f)"
@@ -38,7 +38,7 @@ function main {
 	sys_mem_kb="$(cat /proc/meminfo | grep MemAvailable | awk '{print $2}')"
 	SYSTEM_MEMORY_AVAIL="$(expr $sys_mem_kb / 1024 / 1024)"
 	# get version from tar file 10.0.0/8.0.0/9.0.0
-	ZCS_VERSION="$(echo $BUILD_ARTIFACT | grep -oP "(?<=-)\d+(\.\d+)+")" 
+	ZCS_VERSION="$(echo $ZCS_BINARY_TGZ | grep -oP "(?<=-)\d+(\.\d+)+")" 
 	ver_pattern="10\.\([1-9]\|[1-9][0-9]\)\.*" # matches 10.1x.xx
 	INSTALL_PKGS=(
 		zimbra-ldap
@@ -83,7 +83,7 @@ function main {
 			shift
 			;;
 			-b|--build-artifact)
-			BUILD_ARTIFACT="$2"
+			ZCS_BINARY_TGZ="$2"
 			shift
 			shift
 			;;
@@ -154,10 +154,24 @@ function check_vars {
 		fi
 	fi
 
-	[[ ! -f "$BUILD_ARTIFACT" ]] && echo "Cannot locate the build artifact (zcs-*.tgz) file." && exit 1;
+	[[ ! -f "$ZCS_BINARY_TGZ" ]] && download_zcs_binary
 	[[ -z "$HOSTNAME" ]] && echo "Cannot find \$HOSTNAME." && exit 1;
 	[[ -z "$ADMIN_PASS " ]] && echo "Admin password is empty. Using default password."
 	[[ -z "$TIMEZONE " ]] && echo "Time-zone provided is empty. Setting default Time-zone." && TIMEZONE="Asia/Singapore"
+}
+
+function download_zcs_binary {
+	# Download the latest zcs binary from the zimbra downloads page.
+	local zcs_download_page="https://www.zimbra.com/product/download/zimbra-collaboration-network-edition/"
+	local files_zimbra="https://files.zimbra.com/downloads"
+	local default_zcs_version="10.0.0_GA"
+	local platform_os="$(curl -s https://raw.githubusercontent.com/Zimbra/zm-build/develop/rpmconf/Build/get_plat_tag.sh | sudo bash)"
+	ZCS_BINARY_TGZ="$(curl -s $zcs_download_page | \
+						grep -o '["'\''][^"'\''>]*\.tgz["'\'']' | \
+						grep -Eo "zcs-NETWORK-${default_zcs_version}_[0-9]+\.${platform_os}\.[0-9]+\.tgz" | \
+						head -n 1)"
+	cd $dir_script && echo "Downloading $zcs_download_page/$ZCS_BINARY_TGZ"
+	wget "$files_zimbra/$default_zcs_version/$ZCS_BINARY_TGZ" || exit 1;
 }
 
 function check_sudoer {
@@ -230,7 +244,7 @@ function install_zimbra {
 function extract_build {
 	# Extract build artifact.
 	echo "Extracting the build artifact..."
-	tar -xzvf "$BUILD_ARTIFACT"
+	tar -xzvf "$ZCS_BINARY_TGZ"
 	[[ "$?" -ne "0" ]] && echo "Cannot extract the build artifact." && exit 1;
 }
 
@@ -295,10 +309,9 @@ function install_essential {
 		netfilter-persistent dnsutils iptables sed wget rsyslog ldapscripts
 	)
 	list_essentials_redhat=(
-		netcat-openbsd sudo libidn11 libpcre3 libgmp10 \
-		libexpat1 libstdc++6 libaio1 resolvconf \
-		unzip pax sysstat sqlite3 dnsmasq lsb-release net-tools \
-		netfilter-persistent dnsutils iptables sed wget rsyslog ldapscripts
+		nmap-ncat sudo libidn pcre gmp expat libstdc++ libaio unzip \
+		sysstat sqlite dnsmasq redhat-lsb-core net-tools iptables \
+		bind-utils wget rsyslog openldap-clients
 	)
 
 	# Prints all package names in a single line to trigger install.
