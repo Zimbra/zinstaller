@@ -592,6 +592,7 @@ ms $HOSTNAME zimbraImapCleartextLoginEnabled FALSE
 mcf zimbraLastLogonTimestampFrequency 1s
 mc default zimbraPrefShortEmailAddress FALSE
 mc default zimbraFeatureTwoFactorAuthAvailable TRUE
+mc default zimbraFeatureTrustedDevicesEnabled FALSE
 
 mcf +zimbraMailTrustedIP 127.0.0.1
 mcf +zimbraMailTrustedIP $ZIMBRAIP
