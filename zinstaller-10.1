@@ -47,7 +47,7 @@ parse_commandline() {
         _key="$1"
         case "$_key" in
             -l|--license)
-                test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
+                test $# -lt 3 && die "Missing value for the mandatory argument '$_key'." 1
                 _arg_license="$2"
                 shift
                 ;;
@@ -58,7 +58,7 @@ parse_commandline() {
                 license="${_key##-l}"
                 ;;
             -p|--password)
-                test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
+                test $# -lt 3 && die "Missing value for the optional argument '$_key'." 1
                 _arg_password="$2"
                 shift
                 ;;
@@ -69,7 +69,7 @@ parse_commandline() {
                 _arg_password="${_key##-p}"
                 ;;
             -n|--hostname)
-                test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
+                test $# -lt 3 && die "Missing value for the optional argument '$_key'." 1
                 _arg_hostname="$2"
                 shift
                 ;;
@@ -80,7 +80,7 @@ parse_commandline() {
                 _arg_hostname="${_key##-n}"
                 ;;
             -t|--timezone)
-                test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
+                test $# -lt 3 && die "Missing value for the optional argument '$_key'." 1
                 _arg_timezone="$2"
                 shift
                 ;;
@@ -91,7 +91,7 @@ parse_commandline() {
                 _arg_timezone="${_key##-t}"
                 ;;
             -a|--apache)
-                test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
+                test $# -lt 3 && die "Missing value for the optional argument '$_key'." 1
                 _arg_apace="$2"
                 shift
                 ;;
@@ -102,7 +102,7 @@ parse_commandline() {
                 _arg_apache="${_key##-a}"
                 ;;
             -le|--letsencrypt)
-                test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
+                test $# -lt 3 && die "Missing value for the optional argument '$_key'." 1
                 _arg_letsencrypt="$2"
                 shift
                 ;;
