@@ -7,8 +7,6 @@ else
    exit
 fi
 
-exit 1 #Binary has not been released 
-
 # Argbash - see https://argbash.io for more info
 die() {
 	local _ret="${2:-1}"
@@ -131,7 +129,7 @@ parse_commandline() {
 }
 
 handle_passed_args_count() {
-	local _required_args_string="'domain' 'license'"
+	local _required_args_string="'domain'"
 	test "${_positionals_count}" -ge 1 || _PRINT_HELP=yes die "FATAL ERROR: Not enough positional arguments - we require exactly 1 (namely: $_required_args_string), but got only ${_positionals_count}." 1
 	test "${_positionals_count}" -le 1 || _PRINT_HELP=yes die "FATAL ERROR: There were spurious positional arguments --- we expect exactly 1 (namely: $_required_args_string), but got ${_positionals_count} (the last one was: '${_last_positional}')." 1
 }
@@ -155,8 +153,8 @@ assign_positional_args 1 "${_positionals[@]}"
 
 if [ -z "$_arg_license" ]
 then
-      echo "\$License Key is empty!"
-      print_help
+    printf '%s\n' "License Key is missing ..."
+    print_help
 fi
 
 MYIP=$(hostname -I | cut -f1 -d" " | tr -d '[:space:]')
@@ -174,7 +172,7 @@ NC='\033[0m' # No Color
 SYSTEMMEMORY=$(($(grep MemAvailable /proc/meminfo | awk '{print $2}')/1024/1024))
 
 echo "Here are the parameters:"
-echo $LICENSE " " $HOSTONLY " " $HOSTNAME
+echo $LICENSE " " $DOMAIN " " $HOSTNAME
 exit 1
 
 rm -f /etc/apt/sources.list.d/zimbra-onlyoffice.list
@@ -190,11 +188,6 @@ DEBIAN_FRONTEND=noninteractive apt-get upgrade -qq -y < /dev/null > /dev/null
 DEBIAN_FRONTEND=noninteractive apt-get install -qq -y apt-utils< /dev/null > /dev/null
 DEBIAN_FRONTEND=noninteractive apt-get install -qq -y netcat-openbsd sudo libidn11 libpcre3 libgmp10 libexpat1 libstdc++6 libperl5.30 libaio1 resolvconf unzip pax sysstat sqlite3< /dev/null > /dev/null
 DEBIAN_FRONTEND=noninteractive apt-get install -qq -y dnsmasq lsb-release net-tools netfilter-persistent dnsutils iptables sed wget rsyslog ldapscripts< /dev/null > /dev/null
-
-#Remove Distro rabbitmq - not needed anymore
-#systemctl stop rabbitmq
-#systemctl disable rabbitmq
-#DEBIAN_FRONTEND=noninteractive apt-get purge -qq -y rabbitmq< /dev/null > /dev/null
 
 #Make sure to enable PAM
 cat /etc/ssh/sshd_config | grep -v -i usepam > /tmp/sshd_config
