@@ -167,6 +167,10 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 SYSTEMMEMORY=$(($(grep MemAvailable /proc/meminfo | awk '{print $2}')/1024/1024))
 
+echo "Here are the parameters:"
+echo $LICENSE " " $HOSTONLY " " $HOSTNAME
+exit 1
+
 rm -f /etc/apt/sources.list.d/zimbra-onlyoffice.list
 cat > /etc/apt/sources.list.d/zimbra-onlyoffice.list << EOF
 deb [arch=amd64] https://repo.zimbra.com/apt/onlyoffice focal zimbra
