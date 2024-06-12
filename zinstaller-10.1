@@ -52,8 +52,8 @@ parse_commandline() {
             --license=*)
                 _arg_license="${_key##--license=}"
                 ;;
-            -p*)
-                license="${_key##-l}"
+            -l*)
+                _arg_license="${_key##-l}"
                 ;;
             -p|--password)
                 test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
