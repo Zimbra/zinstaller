@@ -171,8 +171,11 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 SYSTEMMEMORY=$(($(grep MemAvailable /proc/meminfo | awk '{print $2}')/1024/1024))
 
-echo "Here are the parameters:"
-echo $LICENSE " " $DOMAIN " " $HOSTNAME
+echo "Here are the passed parameters:"
+echo "License           = "$LICENSE
+echo "Host and Domain   =  "$DOMAIN "&" $HOSTNAME
+echo "LetsEncrypt       = "$LETSENCRYPT
+echo "Password          = "$MYPASSWORD
 exit 1
 
 rm -f /etc/apt/sources.list.d/zimbra-onlyoffice.list
