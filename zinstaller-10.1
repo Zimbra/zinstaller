@@ -30,7 +30,7 @@ print_help() {
     printf '\t%s\n' "-p, --password: Admin password to use (no default)"
     printf '\t%s\n' "-n, --hostname: Hostname to use for the server (default: mail)"
     printf '\t%s\n' "-t, --timezone: Timezone to set the server to user (optional) (default: 'Singapore')"
-    printf '\t%s\n' "-le, --letsencypt: Use Let's Encrypt for providing TLS certificates (optional y/n) (default: 'n')"
+    printf '\t%s\n' "-e, --letsencypt: Use Let's Encrypt for providing TLS certificates (optional y/n) (default: 'n')"
     printf '\t%s\n' "-a, --apache: Add support for spell check and convertd (optional y/n) (default: 'n')"
     printf '\t%s\n' "-h, --help: Prints help"
     printf '%s\n'
@@ -74,7 +74,7 @@ parse_commandline() {
             --hostname=*)
                 _arg_hostname="${_key##--hostname=}"
                 ;;
-            -n)
+            -n*)
                 _arg_hostname="${_key##-n}"
                 ;;
             -t|--timezone)
@@ -99,7 +99,7 @@ parse_commandline() {
             -a*)
                 _arg_apache="${_key##-a}"
                 ;;
-            -le|--letsencrypt)
+            -e|--letsencrypt)
                 test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
                 _arg_letsencrypt="$2"
                 shift
@@ -107,8 +107,8 @@ parse_commandline() {
             --letsencrypt=*)
                 _arg_letsencrypt="${_key##--letsencrypt=}"
                 ;;
-            -le=*)
-                _arg_letsencrypt="${_key##-le=}"
+            -e*)
+                _arg_letsencrypt="${_key##-e=}"
                 ;;
             -h|--help)
                 print_help
