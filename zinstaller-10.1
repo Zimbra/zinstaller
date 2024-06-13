@@ -153,7 +153,7 @@ assign_positional_args 1 "${_positionals[@]}"
 
 if [ -z "$_arg_license" ]
 then
-    printf '%s\n' "License Key is missing ..."
+    printf '%s\n' "License Key is missing ... Please check and re-run $(basename $0).\n"
     print_help
 fi
 
@@ -170,13 +170,6 @@ GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 SYSTEMMEMORY=$(($(grep MemAvailable /proc/meminfo | awk '{print $2}')/1024/1024))
-
-echo "Here are the passed parameters:"
-echo "License           = "$LICENSE
-echo "Host and Domain   =  "$DOMAIN "&" $HOSTNAME
-echo "LetsEncrypt       = "$LETSENCRYPT
-echo "Password          = "$MYPASSWORD
-exit 1
 
 rm -f /etc/apt/sources.list.d/zimbra-onlyoffice.list
 cat > /etc/apt/sources.list.d/zimbra-onlyoffice.list << EOF
@@ -389,10 +382,10 @@ fi
 
 #Download binaries
 echo "Downloading Zimbra 10 for Ubuntu $version ..."
-wget -P /tmp/ https://files.zimbra.com/downloads/10.0.0_GA/zcs-NETWORK-10.0.0_GA_4518.UBUNTU20_64.20230301065514.tgz > /dev/null 2>&1
+#wget -P /tmp/ https://files.zimbra.com/downloads/10.0.0_GA/zcs-NETWORK-10.0.0_GA_4518.UBUNTU20_64.20230301065514.tgz > /dev/null 2>&1
 
 echo "Extracting the files ..."
-cd /tmp/zcs && tar xzf /tmp/zcs-NETWORK-10.0.0_GA_4518.UBUNTU20_64.20230301065514.tgz
+#cd /tmp/zcs && tar xzf /tmp/zcs-NETWORK-10.0.0_GA_4518.UBUNTU20_64.20230301065514.tgz
 
 echo "Creating the auto-install input files ..."
 > /tmp/zcs/zconfig
@@ -534,12 +527,6 @@ y
 EOF
 
 D=`date +%s`
-echo "Download the trial license ..."
-wget -q --no-check-certificate --no-proxy -O /tmp/zcs/ZCSLicense.xml "https://license.zimbra.com/zimbraLicensePortal/public/STLicense?IssuedToName=MyCompany&IssuedToEmail=noone@$DOMAIN" 
-if [ ! -s "/tmp/zcs/ZCSLicense.xml" ]; then
-	echo -e "${RED}License file could not be downloaded. Please check and re-run $(basename $0).${NC}"
-	exit 1
-fi
 echo -e "${GREEN}... Done.${NC}"
 echo "Installing the Zimbra binaries ..."
 echo -e "For more details you can open a new terminal and run ${GREEN}tail -f /tmp/install.log.*${NC}"
