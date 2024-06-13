@@ -171,11 +171,11 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 SYSTEMMEMORY=$(($(grep MemAvailable /proc/meminfo | awk '{print $2}')/1024/1024))
 
-rm -f /etc/apt/sources.list.d/zimbra-onlyoffice.list
-cat > /etc/apt/sources.list.d/zimbra-onlyoffice.list << EOF
-deb [arch=amd64] https://repo.zimbra.com/apt/onlyoffice focal zimbra
-deb-src [arch=amd64] https://repo.zimbra.com/apt/onlyoffice focal zimbra
-EOF
+# Only-Office repo is added by the installer 
+#rm -f /etc/apt/sources.list.d/zimbra-onlyoffice.list
+#cat > /etc/apt/sources.list.d/zimbra-onlyoffice.list << EOF
+#deb     [arch=amd64] https://repo.zimbra.com/apt/onlyoffice-1010 focal zimbra
+#EOF
 
 echo "Updating system and installing some essential packages ..."
 #What are the other essential packages?
@@ -332,11 +332,17 @@ timedatectl set-timezone $TIMEZONE >/dev/null 2>&1
 echo -e "${GREEN}... Done.${NC}"
 apt-get -qq update < /dev/null > /dev/null
 
+#other updates
+echo "Updating locale ..."
+DEBIAN_FRONTEND=noninteractive apt-get install -qq -y locales < /dev/null > /dev/null
+locale-gen "en_US.UTF-8" > /dev/null
+update-locale LC_ALL="en_US.UTF-8"
+
 # Get Ubuntu Version
 version=$(lsb_release -d | awk -F" " '{print $3}' | cut -c 1-5)
 
 if [ "$LETSENCRYPT" != "${LETSENCRYPT#[Yy]}" ] ;then # this grammar (the #[] operator) means that the variable $answer where any Y or y in 1st position will be dropped if they exist.
-   if [ $(dig +short type257 $(hostname --d) | grep "letsencrypt.org" | grep -v "issuewild" | grep "issue" | wc -l) -eq 1 ]; then   
+   if [ $(dig +short type257 $(hostname --d) | grep "letsencrypt.org" | grep "issue" | wc -l) -ge 1 ]; then   
       echo "Installing certbot"
       apt-get install -y -qq python3 python3-venv libaugeas0 python3-venv > /dev/null
       python3 -m venv /opt/certbot/
@@ -368,24 +374,19 @@ EOF
    fi
 fi
 
-#other updates
-DEBIAN_FRONTEND=noninteractive apt-get install -qq -y locales < /dev/null > /dev/null
-locale-gen "en_US.UTF-8" > /dev/null
-update-locale LC_ALL="en_US.UTF-8"
-
 #Preparing the config files to inject
 if [ ! -d "/tmp/zcs" ]; then
     mkdir /tmp/zcs
 else
-    rm -rf tmp/zcs/*    #Dangerous Command
+    rm -rf /tmp/zcs/*    #Dangerous Command
 fi
 
 #Download binaries
 echo "Downloading Zimbra 10 for Ubuntu $version ..."
-#wget -P /tmp/ https://files.zimbra.com/downloads/10.0.0_GA/zcs-NETWORK-10.0.0_GA_4518.UBUNTU20_64.20230301065514.tgz > /dev/null 2>&1
+#wget -P /tmp/ https://https://files.zimbra.com/downloads/10.1.0_GA/zcs-NETWORK-10.1.0_GA_4633.UBUNTU20_64.20240610085557.tgz > /dev/null 2>&1
 
 echo "Extracting the files ..."
-#cd /tmp/zcs && tar xzf /tmp/zcs-NETWORK-10.0.0_GA_4518.UBUNTU20_64.20230301065514.tgz
+cd /tmp/zcs && tar xzf ~/zcs-NETWORK-10.1.0_GA_4633.UBUNTU20_64.20240610085557.tgz
 
 echo "Creating the auto-install input files ..."
 > /tmp/zcs/zconfig
@@ -500,7 +501,7 @@ zimbra_server_hostname="$HOSTNAME"
 EOF
 
 if [[ "$APACHE" == "y" ]]; then
-    echo 'INSTALL_PACKAGES="zimbra-core zimbra-ldap zimbra-logger zimbra-mta zimbra-snmp zimbra-store zimbra-apache zimbra-spell zimbra-convertd zimbra-memcached zimbra-proxy zimbra-archiving zimbra-onlyoffice zimbra-license-daemon"' >>/tmp/zcs/zconfig
+    echo 'INSTALL_PACKAGES="zimbra-core zimbra-ldap zimbra-logger zimbra-mta zimbra-store zimbra-apache zimbra-spell zimbra-convertd zimbra-memcached zimbra-proxy zimbra-archiving zimbra-onlyoffice zimbra-license-daemon"' >>/tmp/zcs/zconfig
 else 
     echo 'INSTALL_PACKAGES="zimbra-core zimbra-ldap zimbra-logger zimbra-mta zimbra-store zimbra-convertd zimbra-memcached zimbra-proxy zimbra-archiving zimbra-onlyoffice zimbra-license-daemon"' >>/tmp/zcs/zconfig
 fi
@@ -515,6 +516,7 @@ y
 n
 n
 y
+y
 $APACHE
 $APACHE
 y
@@ -522,7 +524,6 @@ y
 y
 y
 y
-n
 y
 EOF
 
