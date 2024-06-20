@@ -330,18 +330,18 @@ if [ "$LETSENCRYPT" != "${LETSENCRYPT#[Yy]}" ] ;then # this grammar (the #[] ope
       /opt/certbot/bin/pip install --upgrade pip
       /opt/certbot/bin/pip install certbot
       ln -s /opt/certbot/bin/certbot /usr/local/sbin/certbot
-      /usr/local/sbin/certbot certonly -d $(hostname --fqdn) --standalone --preferred-chain  "ISRG Root X1" --agree-tos --register-unsafely-without-email
+      /usr/local/sbin/certbot certonly -d $(hostname --fqdn) --standalone --preferred-chain  "ISRG Root X2" --agree-tos --register-unsafely-without-email
       cat >> /usr/local/sbin/letsencrypt-zimbra << EOF
 #!/bin/bash
 MAILTO=""
-/usr/local/sbin/certbot certonly -d $(hostname --fqdn) --standalone -n --preferred-chain  "ISRG Root X1" --agree-tos --register-unsafely-without-email
+/usr/local/sbin/certbot certonly -d $(hostname --fqdn) --standalone -n --preferred-chain  "ISRG Root X2" --agree-tos --register-unsafely-without-email
 
 cp "/etc/letsencrypt/live/$(hostname --fqdn)/privkey.pem" /opt/zimbra/ssl/zimbra/commercial/commercial.key
 chown zimbra:zimbra /opt/zimbra/ssl/zimbra/commercial/commercial.key
-wget -O /tmp/ISRG-X1.pem https://letsencrypt.org/certs/isrgrootx1.pem.txt
+wget -O /tmp/ISRG-X2.pem https://letsencrypt.org/certs/isrg-root-x2.pem
 rm -f "/etc/letsencrypt/live/$(hostname --fqdn)/chainZimbra.pem"
 cp "/etc/letsencrypt/live/$(hostname --fqdn)/chain.pem" "/etc/letsencrypt/live/$(hostname --fqdn)/chainZimbra.pem"
-cat /tmp/ISRG-X1.pem >> "/etc/letsencrypt/live/$(hostname --fqdn)/chainZimbra.pem"
+cat /tmp/ISRG-X2.pem >> "/etc/letsencrypt/live/$(hostname --fqdn)/chainZimbra.pem"
 chown zimbra:zimbra /etc/letsencrypt -R
 cd /tmp
 su - zimbra -c '/opt/zimbra/bin/zmcertmgr deploycrt comm "/etc/letsencrypt/live/$(hostname --fqdn)/cert.pem" "/etc/letsencrypt/live/$(hostname --fqdn)/chainZimbra.pem"'
