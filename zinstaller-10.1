@@ -1,7 +1,7 @@
 #!/bin/bash
 
 UVER = $(lsb_release -d)
-if (echo $UVER) | grep -q "Ubuntu 22"; then
+if (echo $UVER) | grep -q "Ubuntu 20"; then
    echo $UVER is supported
 else
    echo $UVER is not supported
@@ -384,7 +384,7 @@ fi
 
 #Download binaries
 echo "Downloading Zimbra 10 for Ubuntu $version ..."
-#wget -P /tmp/ https://https://files.zimbra.com/downloads/10.1.0_GA/zcs-NETWORK-10.1.0_GA_4633.UBUNTU20_64.20240610085557.tgz > /dev/null 2>&1
+wget -P /tmp/ https://files.zimbra.com/downloads/10.1.0_GA/zcs-NETWORK-10.1.0_GA_4633.UBUNTU20_64.20240610085557.tgz > /dev/null 2>&1
 
 echo "Extracting the files ..."
 cd /tmp/zcs && tar xzf ~/zcs-NETWORK-10.1.0_BETA_4634.UBUNTU22_64.20240610092518.tgz
