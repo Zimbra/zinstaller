@@ -1,7 +1,7 @@
 #!/bin/bash
 
 UVER = $(lsb_release -d)
-if (echo $UVER) | grep -q "Ubuntu 2?"; then
+if (echo $UVER) | grep -q "Ubuntu 22"; then
    echo $UVER is supported
 else
    echo $UVER is not supported
