@@ -1,9 +1,10 @@
 #!/bin/bash
 
-if (lsb_release -d) | grep -q "Ubuntu 20"; then
-   echo $(lsb_release -d) is supported
+UVER = $(lsb_release -d)
+if (echo $UVER) | grep -q "Ubuntu 2?"; then
+   echo $UVER is supported
 else
-   echo $(lsb_release -d) is not supported
+   echo $UVER is not supported
    exit
 fi
 
@@ -386,14 +387,14 @@ echo "Downloading Zimbra 10 for Ubuntu $version ..."
 #wget -P /tmp/ https://https://files.zimbra.com/downloads/10.1.0_GA/zcs-NETWORK-10.1.0_GA_4633.UBUNTU20_64.20240610085557.tgz > /dev/null 2>&1
 
 echo "Extracting the files ..."
-cd /tmp/zcs && tar xzf ~/zcs-NETWORK-10.1.0_GA_4633.UBUNTU20_64.20240610085557.tgz
+cd /tmp/zcs && tar xzf ~/zcs-NETWORK-10.1.0_BETA_4634.UBUNTU22_64.20240610092518.tgz
 
 echo "Creating the auto-install input files ..."
 > /tmp/zcs/zconfig
 cat <<EOF >/tmp/zcs/zconfig
 AVDOMAIN="$DOMAIN"
-AVUSER="admin@$DOMAIN"
-CREATEADMIN="admin@$DOMAIN"
+AVUSER="super-admin@$DOMAIN"
+CREATEADMIN="super-admin@$DOMAIN"
 CREATEADMINPASS="$MYPASSWORD"
 CREATEDOMAIN="$DOMAIN"
 DOCREATEADMIN="yes"
@@ -447,10 +448,10 @@ RUNDKIM="yes"
 RUNSA="yes"
 RUNVMHA="no"
 SERVICEWEBAPP="yes"
-SMTPDEST="admin@$DOMAIN"
+SMTPDEST="super-admin@$DOMAIN"
 SMTPHOST="$HOSTNAME"
 SMTPNOTIFY="yes"
-SMTPSOURCE="admin@$DOMAIN"
+SMTPSOURCE="super-admin@$DOMAIN"
 SNMPNOTIFY="yes"
 SNMPTRAPHOST="$HOSTNAME"
 SPELLURL="http://$HOSTNAME:7780/aspell.php"
@@ -491,8 +492,8 @@ zimbraMtaMyNetworks="127.0.0.0/8 $MYIP/32 [::1]/128 [fe80::]/64"
 zimbraPrefTimeZoneId="$TIMEZONE"
 zimbraReverseProxyLookupTarget="TRUE"
 zimbraVersionCheckInterval="1d"
-zimbraVersionCheckNotificationEmail="admin@$DOMAIN"
-zimbraVersionCheckNotificationEmailFrom="admin@$DOMAIN"
+zimbraVersionCheckNotificationEmail="super-admin@$DOMAIN"
+zimbraVersionCheckNotificationEmailFrom="super-admin@$DOMAIN"
 zimbraVersionCheckSendNotifications="TRUE"
 zimbraWebProxy="TRUE"
 zimbra_ldap_userdn="uid=zimbra,cn=admins,cn=zimbra"
@@ -603,7 +604,7 @@ mc default zimbraFeatureTrustedDevicesEnabled FALSE
 mcf +zimbraMailTrustedIP 127.0.0.1
 mcf +zimbraMailTrustedIP $MYIP
 mcf +zimbraGalLdapAttrMap manager=manager
-mcf zimbraBackupReportEmailSender admin@$DOMAIN zimbraBackupReportEmailRecipients admin@$DOMAIN
+mcf zimbraBackupReportEmailSender super-admin@$DOMAIN zimbraBackupReportEmailRecipients super-admin@$DOMAIN
 
 ms $HOSTNAME zimbraFileUploadMaxSize 80000000
 ms $HOSTNAME zimbraMailContentMaxSize 80000000
