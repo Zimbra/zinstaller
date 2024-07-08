@@ -547,7 +547,7 @@ echo -e "For more details you can open a new terminal and run ${GREEN}tail -f /t
 echo "Allow mailbox service to start ..."
 for i in {15..0}; do echo -ne "${RED}$i${NC}\033[0K\r"; sleep 1; done; echo
 echo "Activating license ..."
-su - zimbra -c "zmlicense -a"
+su - zimbra -c "zmlicense -a $LICENSE"
 echo -e "${GREEN}... Done.${NC}"
 
 if [ "$LETSENCRYPT" != "${LETSENCRYPT#[Yy]}" ] ;then # this grammar (the #[] operator) means that the variable $answer where any Y or y in 1st position will be dropped if they exist.
