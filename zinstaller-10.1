@@ -1,6 +1,6 @@
 #!/bin/bash
 
-UVER = $(lsb_release -d)
+UVER=$(lsb_release -d)
 if (echo $UVER) | grep -q "Ubuntu 20"; then
    echo $UVER is supported
 else
