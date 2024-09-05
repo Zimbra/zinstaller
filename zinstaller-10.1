@@ -1,7 +1,7 @@
 #!/bin/bash
 
 UVER=$(lsb_release -d)
-if (echo $UVER) | grep -q "Ubuntu 20"; then
+if (echo $UVER) | grep -q "Ubuntu 22"; then
    echo $UVER is supported
 else
    echo $UVER is not supported
@@ -91,7 +91,7 @@ parse_commandline() {
                 ;;
             -a|--apache)
                 test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
-                _arg_apace="$2"
+                _arg_apache="$2"
                 shift
                 ;;
             --apache=*)
@@ -130,7 +130,7 @@ parse_commandline() {
 }
 
 handle_passed_args_count() {
-	local _required_args_string="'domain' "
+	local _required_args_string="'domain'"
 	test "${_positionals_count}" -ge 1 || _PRINT_HELP=yes die "FATAL ERROR: Not enough positional arguments - we require exactly 1 (namely: $_required_args_string), but got only ${_positionals_count}." 1
 	test "${_positionals_count}" -le 1 || _PRINT_HELP=yes die "FATAL ERROR: There were spurious positional arguments --- we expect exactly 1 (namely: $_required_args_string), but got ${_positionals_count} (the last one was: '${_last_positional}')." 1
 }
@@ -384,10 +384,10 @@ fi
 
 #Download binaries
 echo "Downloading Zimbra 10 for Ubuntu $version ..."
-wget -P /tmp/ https://files.zimbra.com/downloads/10.1.0_GA/zcs-NETWORK-10.1.0_GA_4633.UBUNTU20_64.20240610085557.tgz > /dev/null 2>&1
+wget -P /tmp/ https://files.zimbra.com/downloads/10.1.0_GA/zcs-NETWORK-10.1.0_GA_4655.UBUNTU22_64.20240819064312.tgz > /dev/null 2>&1
 
 echo "Extracting the files ..."
-cd /tmp/zcs && tar xzf /tmp/zcs-NETWORK-10.1.0_GA_4633.UBUNTU20_64.20240610085557.tgz
+cd /tmp/zcs && tar xzf /tmp/zcs-NETWORK-10.1.0_GA_4655.UBUNTU22_64.20240819064312.tgz
 
 echo "Creating the auto-install input files ..."
 > /tmp/zcs/zconfig
