@@ -137,7 +137,7 @@ handle_passed_args_count() {
 
 assign_positional_args() {
 	local _positional_name _shift_for=$1
-	_positional_names="_arg_domain "
+	_positional_names="_arg_domain"
 
 	shift "$_shift_for"
 	for _positional_name in ${_positional_names}
@@ -613,8 +613,9 @@ mcf zimbraFileUploadMaxSize 80000000
 mcf zimbraMailContentMaxSize 80000000
 EOF
 
-sed -i 's/-server -Dhttps.protocols=TLSv1.2 -Djdk.tls.client.protocols=TLSv1.2/-server -Dhttps.protocols=TLSv1.2,TLSv1.3 -Djdk.tls.client.protocols=TLSv1.2,TLSv1.3/g' /opt/zimbra/conf/localconfig.xml
-wget -q https://raw.githubusercontent.com/internetstandards/dhe_groups/master/ffdhe4096.pem -O /etc/ffdhe4096.pem
+# Already implemented in the product
+#sed -i 's/-server -Dhttps.protocols=TLSv1.2 -Djdk.tls.client.protocols=TLSv1.2/-server -Dhttps.protocols=TLSv1.2,TLSv1.3 -Djdk.tls.client.protocols=TLSv1.2,TLSv1.3/g' /opt/zimbra/conf/localconfig.xml
+#wget -q https://raw.githubusercontent.com/internetstandards/dhe_groups/master/ffdhe4096.pem -O /etc/ffdhe4096.pem
 
 su - zimbra -c '/opt/zimbra/bin/postconf -e fast_flush_domains=""'
 su - zimbra -c '/opt/zimbra/bin/postconf -e smtpd_etrn_restrictions=reject'
