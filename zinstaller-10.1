@@ -427,7 +427,7 @@ LDAPPORT="389"
 LDAPREPLICATIONTYPE="master"
 LDAPSERVERID="2"
 LICENSEACTIVATIONOPTION="1"
-LICENSEACTIVATIONOPTIONMSG="Activate license with installation"
+LICENSEACTIVATIONOPTIONMSG="Activate license after installation"
 LICENSEKEY="$LICENSE"
 MAILBOXDMEMORY="1920"
 MAILPROXY="TRUE"
@@ -563,7 +563,7 @@ if [ "$LETSENCRYPT" != "${LETSENCRYPT#[Yy]}" ] ;then # this grammar (the #[] ope
 fi
 
 echo "Deploying additional Zimlets"
-DEBIAN_FRONTEND=noninteractive apt-get install -qq -y zimbra-zimlet-user-sessions-management zimbra-zimlet-org-chart < /dev/null > /dev/null
+DEBIAN_FRONTEND=noninteractive apt-get install -qq -y zimbra-zimlet-user-sessions-management zimbra-zimlet-slack zimbra-zimlet-zoom zimbra-zimlet-dropbox zimbra-zimlet-google-drive zimbra-zimlet-onedrive zimbra-zimlet-jitsi zimbra-zimlet-video-call-preferences zimbra-zimlet-nextcloud zimbra-zimlet-voice-message zimbra-zimlet-sideloader zimbra-zimlet-org-chart zimbra-zimlet-privacy-protector zimbra-zimlet-custom-fonts zimbra-zimlet-download-email zimbra-zimlet-import-export-ics < /dev/null > /dev/null
 
 if [[ $(hostname --fqdn) == *"barrydegraaff"* ]] || [[ $(hostname --fqdn) == *"zimbra.tech"* ]]; then
     DEBIAN_FRONTEND=noninteractive apt-get install -qq -y zimbra-zimlet-sideloader< /dev/null > /dev/null
@@ -612,10 +612,6 @@ mcf zimbraMtaMaxMessageSize 80000000
 mcf zimbraFileUploadMaxSize 80000000
 mcf zimbraMailContentMaxSize 80000000
 EOF
-
-# Already implemented in the product
-#sed -i 's/-server -Dhttps.protocols=TLSv1.2 -Djdk.tls.client.protocols=TLSv1.2/-server -Dhttps.protocols=TLSv1.2,TLSv1.3 -Djdk.tls.client.protocols=TLSv1.2,TLSv1.3/g' /opt/zimbra/conf/localconfig.xml
-#wget -q https://raw.githubusercontent.com/internetstandards/dhe_groups/master/ffdhe4096.pem -O /etc/ffdhe4096.pem
 
 su - zimbra -c '/opt/zimbra/bin/postconf -e fast_flush_domains=""'
 su - zimbra -c '/opt/zimbra/bin/postconf -e smtpd_etrn_restrictions=reject'
